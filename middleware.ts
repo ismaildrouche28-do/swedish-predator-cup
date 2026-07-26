@@ -7,6 +7,7 @@ export async function middleware(req: NextRequest) {
 
   if (
     path === "/login" ||
+    path.startsWith("/auth/callback") ||
     path.startsWith("/dev") ||
     path.startsWith("/api/dev") ||
     path.startsWith("/api/debug") ||
