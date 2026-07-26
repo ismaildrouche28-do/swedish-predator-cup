@@ -2,13 +2,20 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON_KEY     = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const ANON_KEY     = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
+  throw new Error(
+    "Supabase Env-Vars fehlen! Prüfe .env.local (lokal) oder Vercel Project Settings → Environment Variables. " +
+    `URL=${SUPABASE_URL ? "OK" : "MISSING"}, ANON=${ANON_KEY ? "OK" : "MISSING"}, SERVICE=${SERVICE_KEY ? "OK" : "MISSING"}`
+  );
+}
 
 export function createClientServer() {
   const cookieStore = cookies();
-  return createServerClient(SUPABASE_URL, ANON_KEY, {
+  return createServerClient(SUPABASE_URL!, ANON_KEY!, {
     cookies: {
       get(name)                          { return cookieStore.get(name)?.value; },
       set(name, value, options)          { try { cookieStore.set({ name, value, ...options }); } catch {} },
