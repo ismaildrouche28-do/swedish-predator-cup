@@ -34,7 +34,7 @@ export default async function HistoriePage() {
           const dateRange = c.start_at && c.end_at
             ? `${new Date(c.start_at).toLocaleDateString("de-DE")} – ${new Date(c.end_at).toLocaleDateString("de-DE")}`
             : c.start_at ? new Date(c.start_at).toLocaleDateString("de-DE") : "—";
-          const statusLabel: any = { prep: "in Vorbereitung", running: "läuft", paused: "pausiert", finished: "beendet" }[c.status];
+          const statusLabel = ({ prep: "in Vorbereitung", running: "läuft", paused: "pausiert", finished: "beendet" } as Record<string, string>)[c.status];
           const isLive = c.status === "running";
           return (
             <Link key={c.id} href={`/historie/${c.id}`}
