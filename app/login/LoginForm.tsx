@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -14,65 +14,110 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const [msgType, setMsgType] = useState<"info" | "error">("info");
   const [loading, setLoading] = useState(false);
+  const codeRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { if (step === "code") codeRef.current?.focus(); }, [step]);
+
+  const showErr = (m: string) => { setMsg(m); setMsgType("error"); };
+  const showInfo = (m: string) => { setMsg(m); setMsgType("info"); };
 
   const sendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setMsg(null);
     const { error } = await supa.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     setLoading(false);
-    if (error) return setMsg("Fehler: " + error.message);
+    if (error) return showErr(friendlyErr(error.message));
     setStep("code");
-    setMsg("Wir haben dir einen 6-stelligen Code per E-Mail geschickt. Bitte auch im Spam-Ordner nachschauen.");
+    showInfo("Wir haben dir einen 6-stelligen Code per E-Mail geschickt. Bitte auch im Spam-Ordner nachschauen.");
   };
 
-  const verifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const verifyCode = async (rawCode?: string) => {
+    const c = (rawCode ?? code).replace(/\D/g, "").slice(0, 6);
+    if (c.length !== 6) return showErr("Bitte den 6-stelligen Code eingeben.");
     setLoading(true); setMsg(null);
-    const { error } = await supa.auth.verifyOtp({ email, token: code, type: "email" });
+    const { error } = await supa.auth.verifyOtp({ email, token: c, type: "email" });
     setLoading(false);
-    if (error) return setMsg("Code falsch oder abgelaufen: " + error.message);
+    if (error) return showErr("Code falsch oder abgelaufen: " + error.message);
     router.push("/");
     router.refresh();
+  };
+
+  const onCodeChange = (v: string) => {
+    const digits = v.replace(/\D/g, "").slice(0, 6);
+    setCode(digits);
+    if (digits.length === 6) verifyCode(digits);
+  };
+
+  const onCodePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted.length === 6) {
+      e.preventDefault();
+      setCode(pasted);
+      verifyCode(pasted);
+    }
   };
 
   return (
     <div className="space-y-4">
       {step === "email" ? (
         <form onSubmit={sendCode} className="space-y-3">
-          <label className="block text-[13px] font-semibold text-ink">E-Mail-Adresse</label>
+          <label className="block text-[13px] font-semibold" style={{color: "#0a3d5c"}}>E-Mail-Adresse</label>
           <input type="email" required autoFocus autoComplete="email"
             value={email} onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-fill border border-transparent focus:border-ocean focus:bg-white outline-none text-[15px]"
+            style={{background: "#f5f7fa", color: "#1c1c1e"}}
+            className="w-full px-4 py-3 rounded-xl border border-transparent focus:border-spc-mid focus:bg-white outline-none text-[15px]"
             placeholder="du@beispiel.de" />
-          <p className="text-[12px] font-semibold text-danger leading-snug">
+          <p className="text-[12px] font-semibold leading-snug" style={{color: "#e0524e"}}>
             Wichtig: Die Mail landet oft im Spam-Ordner. Wenn du sie nicht siehst, dort nachschauen.
           </p>
           <button type="submit" disabled={loading || !email}
-            className="w-full py-3.5 rounded-xl bg-ocean text-white font-semibold disabled:opacity-50">
+            style={{background: "#0a3d5c", color: "#ffffff"}}
+            className="w-full py-3.5 rounded-2xl font-bold text-[15px] disabled:opacity-50 hover:opacity-90 transition">
             {loading ? "Wird gesendet…" : "Code per Mail anfordern"}
           </button>
         </form>
       ) : (
-        <form onSubmit={verifyCode} className="space-y-3">
-          <div className="text-[13.5px] text-ink-2">Code für <strong>{email}</strong></div>
-          <input type="text" inputMode="numeric" pattern="[0-9]*" required autoFocus maxLength={6}
-            value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="w-full px-4 py-3 rounded-xl bg-fill border border-transparent focus:border-ocean focus:bg-white outline-none text-center text-[26px] tracking-[0.4em] num font-semibold"
+        <form onSubmit={(e) => { e.preventDefault(); verifyCode(); }} className="space-y-3">
+          <div className="text-[13.5px]" style={{color: "#48484a"}}>
+            Code für <strong>{email}</strong>
+          </div>
+          <input
+            ref={codeRef}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="one-time-code"
+            required maxLength={6}
+            value={code}
+            onChange={(e) => onCodeChange(e.target.value)}
+            onPaste={onCodePaste}
+            style={{background: "#f5f7fa", color: "#0a3d5c"}}
+            className="w-full px-4 py-4 rounded-xl border-2 border-transparent focus:border-spc-mid focus:bg-white outline-none text-center text-[32px] tracking-[0.4em] num font-bold"
             placeholder="000000" />
           <button type="submit" disabled={loading || code.length < 6}
-            className="w-full py-3.5 rounded-xl bg-ocean text-white font-semibold disabled:opacity-50">
+            style={{background: "#0a3d5c", color: "#ffffff"}}
+            className="w-full py-3.5 rounded-2xl font-bold text-[15px] disabled:opacity-50 hover:opacity-90 transition">
             {loading ? "Prüfe…" : "Anmelden"}
           </button>
           <button type="button" onClick={() => { setStep("email"); setCode(""); setMsg(null); }}
-            className="w-full py-2 text-[13px] text-ink-2 hover:text-ink">
+            className="w-full py-2 text-[13px] font-semibold hover:underline" style={{color: "#0a6db8"}}>
             ← Andere E-Mail nutzen
           </button>
         </form>
       )}
       {msg && (
-        <div className="text-[13px] text-ink-2 bg-fill rounded-lg p-3 leading-relaxed">{msg}</div>
+        <div className="text-[13px] rounded-xl p-3 leading-relaxed"
+          style={{background: msgType === "error" ? "#fdecea" : "#eef4f8", color: msgType === "error" ? "#c22" : "#1c1c1e"}}>
+          {msg}
+        </div>
       )}
     </div>
   );
+}
+
+function friendlyErr(m: string) {
+  if (m.toLowerCase().includes("rate limit")) return "Zu viele Versuche in kurzer Zeit. Bitte 30–60 Sekunden warten und nochmal probieren.";
+  return "Fehler: " + m;
 }

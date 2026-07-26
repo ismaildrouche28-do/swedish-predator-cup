@@ -12,9 +12,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const nick = user.nickname ?? user.name;
   return (
     <div className="grid lg:grid-cols-[240px_1fr] min-h-screen bg-spc-greyLight">
-      <Sidebar nickname={nick} />
+      <Sidebar nickname={nick} avatarUrl={user.avatar_url} isAdmin={user.is_admin} />
       <div>
-        <TopBar nickname={nick} />
+        <TopBar nickname={nick} avatarUrl={user.avatar_url} />
         <main className="pb-28 lg:pb-10 min-h-screen">
           <div className="max-w-[1120px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6">
             {children}

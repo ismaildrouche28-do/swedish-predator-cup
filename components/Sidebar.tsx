@@ -3,25 +3,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icons } from "./Icons";
 
-const NAV = [
+const NAV_BASE = [
   { section: "Wettkampf", items: [
-    { href: "/",         label: "Dashboard",       icon: Icons.home },
-    { href: "/live",     label: "Live-Ranking",    icon: Icons.live },
-    { href: "/scoreboard",label: "Mein Scoreboard",icon: Icons.board },
-    { href: "/fang",     label: "Fang erfassen",   icon: Icons.fish },
+    { href: "/",           label: "Dashboard",       icon: Icons.home },
+    { href: "/live",       label: "Live-Ranking",    icon: Icons.live },
+    { href: "/scoreboard", label: "Mein Scoreboard", icon: Icons.board },
+    { href: "/fang",       label: "Fang erfassen",   icon: Icons.fish },
   ]},
   { section: "Archiv", items: [
-    { href: "/historie", label: "Historie",       icon: Icons.history },
-    { href: "/hof",      label: "Hall of Fame",   icon: Icons.trophy },
-    { href: "/stats",    label: "Meine Statistik",icon: Icons.stats },
+    { href: "/historie",   label: "Historie",        icon: Icons.history },
+    { href: "/hof",        label: "Hall of Fame",    icon: Icons.trophy },
+    { href: "/stats",      label: "Meine Statistik", icon: Icons.stats },
   ]},
-  { section: "Verwaltung", items: [
-    { href: "/setup",    label: "Einstellungen",  icon: Icons.settings },
+  { section: "Konto", items: [
+    { href: "/profil",     label: "Mein Profil",     icon: Icons.user },
+    { href: "/setup",      label: "Einstellungen",   icon: Icons.settings },
   ]},
 ];
 
-export function Sidebar({ nickname }: { nickname: string }) {
+export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; avatarUrl?: string | null; isAdmin?: boolean }) {
   const path = usePathname();
+  const nav = isAdmin
+    ? [...NAV_BASE, { section: "Admin", items: [{ href: "/admin", label: "Verwaltung", icon: Icons.trophyFilled }] }]
+    : NAV_BASE;
   return (
     <aside className="hidden lg:flex flex-col bg-white w-[240px] shrink-0 sticky top-0 h-screen overflow-y-auto py-6 px-3 border-r border-black/[0.06]">
       <Link href="/" className="px-3 pb-5 mb-2 border-b border-black/[0.06] flex items-center gap-2.5">
@@ -32,7 +36,7 @@ export function Sidebar({ nickname }: { nickname: string }) {
         </div>
       </Link>
 
-      {NAV.map(section => (
+      {nav.map(section => (
         <div key={section.section} className="mb-1">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 px-3 pt-4 pb-1.5">{section.section}</div>
           {section.items.map(item => {
@@ -51,11 +55,17 @@ export function Sidebar({ nickname }: { nickname: string }) {
         </div>
       ))}
 
-      <div className="mt-auto pt-4 border-t border-black/[0.06] text-[11px] text-ink-3 px-3">
-        <div className="mb-2">Angemeldet als<br/><strong className="text-ink font-semibold text-[13px]">{nickname}</strong></div>
-        <form action="/api/logout" method="post">
-          <button className="text-spc-mid text-[12.5px] font-semibold hover:underline">Abmelden →</button>
-        </form>
+      <div className="mt-auto pt-4 border-t border-black/[0.06] px-3 flex items-center gap-2.5">
+        <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-lighter overflow-hidden flex items-center justify-center flex-shrink-0">
+          {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> :
+            <span className="text-[13px] font-bold text-spc-mid">{nickname.slice(0,1).toUpperCase()}</span>}
+        </Link>
+        <div className="flex-1 min-w-0">
+          <div className="text-[12.5px] font-bold text-spc-dark truncate">{nickname}</div>
+          <form action="/api/logout" method="post">
+            <button className="text-spc-mid text-[11.5px] font-semibold hover:underline">Abmelden →</button>
+          </form>
+        </div>
       </div>
     </aside>
   );
