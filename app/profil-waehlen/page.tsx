@@ -1,14 +1,15 @@
 import { isAppUnlocked } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import { ProfileGrid } from "./ProfileGrid";
+import { pickProfile, logoutApp } from "./actions";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilWaehlen() {
   if (!isAppUnlocked()) redirect("/login");
 
-  const { data: profiles } = await supabaseAdmin
+  const { data: profiles, error } = await supabaseAdmin
     .from("users")
     .select("id, name, nickname, avatar_url")
     .eq("is_active", true)
@@ -22,9 +23,38 @@ export default async function ProfilWaehlen() {
           <h1 className="text-[22px] sm:text-[26px] font-bold text-spc-dark tracking-tight">Wer bist du?</h1>
           <p className="text-[14px] text-ink-2 mt-1.5">Wähl dein Profil aus.</p>
         </div>
-        <ProfileGrid profiles={profiles ?? []} />
-        <div className="mt-6 text-center border-t border-black/[0.06] pt-4">
-          <a href="/admin/login" className="text-[13px] text-spc-mid font-semibold hover:underline">Admin-Bereich →</a>
+
+        {error && <div className="text-[13px] rounded-xl p-3 mb-3" style={{background:"#fdecea", color:"#c22"}}>Fehler: {error.message}</div>}
+
+        {(!profiles || profiles.length === 0) ? (
+          <div className="text-center py-10">
+            <div className="text-5xl mb-3">👤</div>
+            <div className="text-[16px] font-bold text-spc-dark mb-2">Noch keine Profile</div>
+            <p className="text-[13.5px] text-ink-3 mb-4">Der Admin muss zuerst Teilnehmer anlegen.</p>
+            <Link href="/admin/login" className="inline-block px-5 py-2.5 rounded-xl bg-spc-dark text-white text-[13px] font-bold">Zum Admin-Bereich</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {profiles.map((p: any) => (
+              <form key={p.id} action={pickProfile}>
+                <input type="hidden" name="profileId" value={p.id} />
+                <button type="submit"
+                  className="w-full rounded-2xl p-4 bg-spc-greyLight hover:bg-spc-lighter/60 text-center transition group">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-spc-mid text-white flex items-center justify-center text-[28px] font-bold overflow-hidden mb-2 group-hover:ring-4 group-hover:ring-spc-mid/30 transition">
+                    {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : (p.nickname ?? p.name ?? "?").slice(0,1).toUpperCase()}
+                  </div>
+                  <div className="text-[15px] font-bold text-spc-dark">{p.nickname ?? p.name}</div>
+                </button>
+              </form>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6 text-center border-t border-black/[0.06] pt-4 flex items-center justify-between">
+          <Link href="/admin/login" className="text-[13px] text-spc-mid font-semibold hover:underline">Admin-Bereich →</Link>
+          <form action={logoutApp}>
+            <button className="text-[12px] text-ink-3 hover:text-danger">Zugangscode zurücksetzen</button>
+          </form>
         </div>
       </div>
     </main>
