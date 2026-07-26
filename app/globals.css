@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { min-height: 100vh; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #f5f7fa;
+  color: #1c1c1e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+.num { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Analog Tippspiel: bg utilities */
+.bg-cs-gradient      { background: linear-gradient(90deg, #0a3d5c 0%, #0a6db8 100%); }
+.bg-cs-gradient-mid  { background: linear-gradient(90deg, #2a6a8e 0%, #7db3d9 100%); }
+.bg-cs-section       { background: #eef4f8; }
+
+/* Shadows */
+.shadow-cs           { box-shadow: 0 6px 24px -8px rgba(10, 61, 92, 0.20); }
+.shadow-cs-sm        { box-shadow: 0 2px 8px -2px rgba(10, 61, 92, 0.12); }
+
+/* Safe-Areas */
+.safe-pt { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); }
+.safe-pb { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); }
+
+/* Sticky filter (analog Tippspiel) */
+.sticky-filter {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(245, 247, 250, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+.scroll-mt-tabs { scroll-margin-top: 120px; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.emoji { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"; }
+
+/* Animations (analog Tippspiel) */
+@keyframes fadeslide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeslide { animation: fadeslide 350ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes pulse-dot {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+@keyframes swipe-hint-right {
+  0% { transform: translateX(0); opacity: 0.8; }
+  50% { transform: translateX(8px); opacity: 1; }
+  100% { transform: translateX(0); opacity: 0.8; }
+}
+.animate-swipe-pill-right { animation: swipe-hint-right 1.8s ease-in-out infinite; }
+
+/* Confetti (fürs Onboarding-Confetti) */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+.animate-confetti { animation: confetti-fall 3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* iOS-Blur bar */
+.blur-bar {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(22px);
+  -webkit-backdrop-filter: saturate(180%) blur(22px);
+}
