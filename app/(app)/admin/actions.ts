@@ -3,8 +3,47 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+export async function createProfile(formData: FormData) {
+  requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim() || null;
+  if (!name) return { error: "Name ist Pflicht" };
+  const { error } = await supabaseAdmin.from("users").insert({ name, nickname, is_active: true, onboarding_done: true });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function updateProfileById(id: string, formData: FormData) {
+  requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const nickname = String(formData.get("nickname") ?? "").trim() || null;
+  if (!name) return { error: "Name ist Pflicht" };
+  const { error } = await supabaseAdmin.from("users").update({ name, nickname }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function toggleProfileActive(id: string, active: boolean) {
+  requireAdmin();
+  await supabaseAdmin.from("users").update({ is_active: active }).eq("id", id);
+  revalidatePath("/", "layout");
+}
+
+export async function deleteProfilePermanent(id: string) {
+  requireAdmin();
+  // Fänge & Strafen des Profils auch weg
+  await supabaseAdmin.from("catches").delete().eq("user_id", id);
+  await supabaseAdmin.from("penalties").delete().eq("user_id", id);
+  await supabaseAdmin.from("boat_members").delete().eq("user_id", id);
+  await supabaseAdmin.from("calls").delete().eq("user_id", id);
+  await supabaseAdmin.from("users").delete().eq("id", id);
+  revalidatePath("/", "layout");
+}
+
 export async function updateCompetitionMeta(competitionId: string, formData: FormData) {
-  await requireAdmin();
+  requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim() || null;
   const start_at = String(formData.get("start_at") ?? "") || null;
@@ -19,20 +58,10 @@ export async function updateCompetitionMeta(competitionId: string, formData: For
   return { ok: true };
 }
 
-export async function deleteCatch(catchId: string) {
-  await requireAdmin();
-  await supabaseAdmin.from("catches").delete().eq("id", catchId);
-  revalidatePath("/", "layout");
-}
-
-export async function toggleAdmin(userId: string, makeAdmin: boolean) {
-  await requireAdmin();
-  await supabaseAdmin.from("users").update({ is_admin: makeAdmin }).eq("id", userId);
-  revalidatePath("/", "layout");
-}
-
-export async function deleteUser(userId: string) {
-  await requireAdmin();
-  await supabaseAdmin.from("users").update({ is_active: false }).eq("id", userId);
-  revalidatePath("/", "layout");
+export async function adminLogout() {
+  "use server";
+  const { cookies } = await import("next/headers");
+  cookies().delete("spc_admin");
+  const { redirect } = await import("next/navigation");
+  redirect("/profil-waehlen");
 }

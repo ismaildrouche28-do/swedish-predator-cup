@@ -10,7 +10,7 @@ export default function LoginPage() {
             <span className="text-xl font-bold text-spc-dark">SPC</span>
           </div>
           <h1 className="text-[22px] font-bold text-spc-dark tracking-tight">Swedish Predator Cup</h1>
-          <p className="text-[14px] text-ink-2 mt-1.5">Melde dich mit deiner E-Mail an.</p>
+          <p className="text-[14px] text-ink-2 mt-1.5">Gib den Zugangscode ein.</p>
         </div>
         <LoginForm />
       </div>

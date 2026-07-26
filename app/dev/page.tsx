@@ -7,7 +7,7 @@ async function getTestUsers() {
   const { data } = await supabaseAdmin
     .from("users")
     .select("id, email, name, nickname")
-    .like("email", "%@spc-test.local")
+    
     .order("name");
   return data ?? [];
 }

@@ -1,42 +1,61 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { createClientServer, supabaseAdmin } from "./supabase";
+import { supabaseAdmin } from "./supabase";
 
-export type SessionUser = {
+const APP_PIN   = process.env.SPC_APP_PIN   ?? "spc2026";
+const ADMIN_PIN = process.env.SPC_ADMIN_PIN ?? "admin2026";
+
+const APP_COOKIE     = "spc_app";      // Wert = "ok" nach PIN-Login
+const ADMIN_COOKIE   = "spc_admin";    // Wert = "ok" nach Admin-PIN-Login
+const PROFILE_COOKIE = "spc_profile";  // Wert = user_id
+
+export type Profile = {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   nickname: string | null;
   avatar_url: string | null;
-  onboarding_done: boolean;
-  is_admin: boolean;
+  is_active: boolean;
 };
 
-export const requireAuth = cache(async (): Promise<SessionUser> => {
-  const supa = createClientServer();
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) redirect("/login");
+export function checkAppPin(pin: string) { return pin === APP_PIN; }
+export function checkAdminPin(pin: string) { return pin === ADMIN_PIN; }
 
-  const { data: profile } = await supabaseAdmin
+export function isAppUnlocked() {
+  return cookies().get(APP_COOKIE)?.value === "ok";
+}
+export function isAdminUnlocked() {
+  return cookies().get(ADMIN_COOKIE)?.value === "ok";
+}
+
+export function requireApp() {
+  if (!isAppUnlocked()) redirect("/login");
+}
+export function requireAdmin() {
+  requireApp();
+  if (!isAdminUnlocked()) redirect("/admin/login");
+}
+
+// Aktuelles Profil aus Cookie holen
+export const requireProfile = cache(async (): Promise<Profile> => {
+  requireApp();
+  const pid = cookies().get(PROFILE_COOKIE)?.value;
+  if (!pid) redirect("/profil-waehlen");
+
+  const { data } = await supabaseAdmin
     .from("users")
-    .select("id, email, name, nickname, avatar_url, onboarding_done, is_admin")
-    .eq("id", user.id)
+    .select("id, email, name, nickname, avatar_url, is_active")
+    .eq("id", pid)
     .maybeSingle();
 
-  if (!profile) {
-    const email = user.email ?? "";
-    const nameGuess = email.split("@")[0] || "Neuer Teilnehmer";
-    const isAdmin = email === "ismaildrouche28@gmail.com";
-    await supabaseAdmin.from("users").insert({
-      id: user.id, email, name: nameGuess, onboarding_done: false, is_admin: isAdmin,
-    });
-    return { id: user.id, email, name: nameGuess, nickname: null, avatar_url: null, onboarding_done: false, is_admin: isAdmin };
-  }
-  return profile as SessionUser;
+  if (!data || !data.is_active) redirect("/profil-waehlen");
+  return data as Profile;
 });
 
-export async function requireAdmin() {
-  const user = await requireAuth();
-  if (!user.is_admin) redirect("/");
-  return user;
-}
+// Kompat-Layer für alten Code (requireAuth → requireProfile mit dummy is_admin)
+export type SessionUser = Profile & { onboarding_done: boolean; is_admin: boolean };
+export const requireAuth = cache(async (): Promise<SessionUser> => {
+  const p = await requireProfile();
+  return { ...p, onboarding_done: true, is_admin: isAdminUnlocked() };
+});

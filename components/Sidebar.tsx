@@ -63,7 +63,7 @@ export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; av
         <div className="flex-1 min-w-0">
           <div className="text-[12.5px] font-bold text-spc-dark truncate">{nickname}</div>
           <form action="/api/logout" method="post">
-            <button className="text-spc-mid text-[11.5px] font-semibold hover:underline">Abmelden →</button>
+            <button className="text-spc-mid text-[11.5px] font-semibold hover:underline">Profil wechseln →</button>
           </form>
         </div>
       </div>
