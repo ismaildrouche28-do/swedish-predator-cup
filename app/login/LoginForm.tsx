@@ -40,7 +40,7 @@ export function LoginForm() {
         {loading ? "Prüfe…" : "Öffnen"}
       </button>
       <p className="text-[12px] leading-snug" style={{color: "#48484a"}}>
-        Der Code ist geräteweise gültig (30 Tage). Bekommst du vom Wettkampf-Admin.
+        Der Code wird auf diesem Gerät gemerkt. Bekommst du vom Admin.
       </p>
       {err && <div className="text-[13px] rounded-xl p-3" style={{background: "#fdecea", color: "#c22"}}>{err}</div>}
     </form>

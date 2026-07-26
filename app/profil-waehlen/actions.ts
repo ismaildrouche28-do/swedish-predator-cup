@@ -7,7 +7,7 @@ export async function pickProfile(formData: FormData) {
   if (!pid) return;
   cookies().set("spc_profile", pid, {
     httpOnly: false, sameSite: "lax", secure: true, path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 365 * 10,
   });
   redirect("/");
 }

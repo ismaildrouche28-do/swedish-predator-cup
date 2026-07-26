@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json({ ok: true });
   res.cookies.set("spc_app", "ok", {
     httpOnly: true, sameSite: "lax", secure: true, path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 Tage
+    maxAge: 60 * 60 * 24 * 365 * 10, // 10 Jahre
   });
   return res;
 }
