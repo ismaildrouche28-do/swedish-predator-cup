@@ -158,9 +158,13 @@ export default async function SpielerPage({ params }: { params: { userId: string
           {catches.length === 0 && <div className="text-[13.5px] text-ink-3 italic py-3">Noch keine Fänge.</div>}
           {catches.map((c: any, i: number) => (
             <div key={c.id} className={`grid grid-cols-[48px_1fr_auto] gap-3 items-center rounded-2xl px-3 py-2.5 ${c.is_scored ? "bg-spc-greyLight" : "bg-spc-greyLight opacity-60"}`}>
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center relative">
-                <FishPhoto species={c.species} className={`w-full h-full object-contain ${!c.is_valid ? "grayscale opacity-50" : ""}`} />
-                {c.is_scored && <span className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-spc-mid text-white flex items-center justify-center text-[11px] font-bold border-2 border-white">✓</span>}
+              <div className="relative w-12 h-12 shrink-0">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center">
+                  <FishPhoto species={c.species} className={`w-full h-full object-contain ${!c.is_valid ? "grayscale opacity-50" : ""}`} />
+                </div>
+                {c.is_scored && (
+                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-spc-mid text-white flex items-center justify-center text-[11px] font-bold ring-2 ring-white">✓</span>
+                )}
               </div>
               <div>
                 <div className={`text-[15px] font-bold ${c.is_scored ? "text-spc-dark" : "text-ink-3 line-through"}`}>
