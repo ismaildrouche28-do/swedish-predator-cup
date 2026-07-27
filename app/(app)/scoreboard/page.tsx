@@ -2,7 +2,7 @@ import { requireAuth } from "@/lib/auth";
 import { getActiveCompetition, getLatestCompetition, getCatchesForUser, getLiveRanking } from "@/lib/queries";
 import { supabaseAdmin } from "@/lib/supabase";
 import { KpiCard } from "@/components/KpiCard";
-import { FishThumb } from "@/components/Icons";
+import { FishThumb, FishPhoto } from "@/components/Icons";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -56,8 +56,13 @@ export default async function ScoreboardPage() {
           {scored.map((c: any, i: number) => {
             const isWeak = weakest && c.id === weakest.id;
             return (
-              <div key={c.id} className={`grid grid-cols-[30px_1fr_auto] gap-3.5 items-center rounded-2xl px-3.5 py-3 ${isWeak ? "bg-danger/10" : "bg-spc-greyLight"}`}>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold num ${i === 0 ? "bg-spc-mid text-white" : "bg-white text-ink-3"}`}>{i + 1}</div>
+              <div key={c.id} className={`grid grid-cols-[48px_1fr_auto] gap-3 items-center rounded-2xl px-3 py-2.5 ${isWeak ? "bg-danger/10" : "bg-spc-greyLight"}`}>
+                <div className="relative w-12 h-12 shrink-0">
+                  <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${isWeak ? "bg-danger/10" : "bg-white"}`}>
+                    <FishPhoto species={c.species} className="w-full h-full object-contain" />
+                  </div>
+                  <span className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold num ring-2 ring-white ${i === 0 ? "bg-spc-gold text-spc-goldDeep" : isWeak ? "bg-danger text-white" : "bg-spc-mid text-white"}`}>{i + 1}</span>
+                </div>
                 <div>
                   <div className="text-[15px] font-bold text-spc-dark">
                     {SPECIES[c.species]} {c.length_cm} cm
@@ -88,8 +93,10 @@ export default async function ScoreboardPage() {
           <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-3">Nicht gewertete Fänge</div>
           <div className="space-y-1.5">
             {unscored.map((c: any) => (
-              <div key={c.id} className="grid grid-cols-[30px_1fr_auto] gap-3.5 items-center rounded-2xl px-3.5 py-3 bg-spc-greyLight opacity-70">
-                <div className="w-7 h-7 rounded-lg border-2 border-dashed border-ink-4 flex items-center justify-center text-ink-3 text-[12px]">—</div>
+              <div key={c.id} className="grid grid-cols-[48px_1fr_auto] gap-3 items-center rounded-2xl px-3 py-2.5 bg-spc-greyLight opacity-70">
+                <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center shrink-0">
+                  <FishPhoto species={c.species} className="w-full h-full object-contain grayscale opacity-60" />
+                </div>
                 <div>
                   <div className="text-[14.5px] font-bold line-through text-ink-3">{SPECIES[c.species]} {c.length_cm} cm</div>
                   <div className="text-[12px] text-ink-3">{c.is_valid ? "aus der Wertung (Slot-Regel)" : "unter Mindestmaß"}</div>
