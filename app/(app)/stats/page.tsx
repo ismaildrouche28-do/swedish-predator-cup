@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { KpiCard } from "@/components/KpiCard";
+import { FishPhoto } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 const SPECIES: any = { perch: "Barsch", zander: "Zander", pike: "Hecht" };
@@ -73,8 +74,13 @@ export default async function StatsPage() {
               const c = bestByType[sp];
               if (!c) return null;
               return (
-                <div key={sp} className="grid grid-cols-[30px_1fr_auto] gap-3.5 items-center bg-spc-greyLight rounded-2xl px-3.5 py-3">
-                  <div className="w-7 h-7 rounded-lg bg-spc-gold text-spc-goldDeep flex items-center justify-center text-[13px] font-bold">★</div>
+                <div key={sp} className="grid grid-cols-[48px_1fr_auto] gap-3 items-center bg-spc-greyLight rounded-2xl px-3 py-2.5">
+                  <div className="relative w-12 h-12 shrink-0">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-white flex items-center justify-center">
+                      <FishPhoto species={sp} className="w-full h-full object-contain" />
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-spc-gold text-spc-goldDeep flex items-center justify-center text-[11px] font-bold ring-2 ring-white">★</span>
+                  </div>
                   <div>
                     <div className="text-[15px] font-bold text-spc-dark">
                       {SPECIES[sp]} {c.length_cm} cm
