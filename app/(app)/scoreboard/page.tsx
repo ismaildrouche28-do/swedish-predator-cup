@@ -45,6 +45,21 @@ export default async function ScoreboardPage() {
         </div>
       </section>
 
+      {catches.length > 0 && (
+        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-2.5 mb-3">
+          <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
+            <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-1">Punkte-Verlauf</div>
+            <div className="text-[12.5px] text-ink-3 mb-3">Wie sich deine Punkte über die Zeit entwickelt haben</div>
+            <PointsChart catches={catches} />
+          </div>
+          <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
+            <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-1">Fisch-Art-Verteilung</div>
+            <div className="text-[12.5px] text-ink-3 mb-3">Anteil deiner gewerteten Fänge</div>
+            <SpeciesDonut scored={scored} />
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
         <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-3">Meine gewerteten Fänge</div>
         <div className="space-y-1.5">
