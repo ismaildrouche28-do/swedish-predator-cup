@@ -233,19 +233,24 @@ function BigFishCard({ label, species, lengthCm, points, userName, timeStr, extr
   userName: string; timeStr: string; extra?: string; accentGold?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
-      <div className={`text-[11px] uppercase tracking-widest font-bold mb-3 ${accentGold ? "text-spc-goldDeep" : "text-ink-3"}`}>{label}</div>
-      <div className="w-full aspect-[16/8] bg-transparent flex items-center justify-center mb-3">
-        <FishPhoto species={species} className="max-w-full max-h-full object-contain drop-shadow-md" />
-      </div>
-      <div className="text-[22px] font-bold text-spc-dark leading-tight">{SPECIES[species]} {lengthCm} cm</div>
-      <div className="text-[14px] text-ink-2 mt-1 font-medium">{userName}</div>
-      <div className="text-[12.5px] text-ink-3 mt-0.5">
-        {timeStr} Uhr {extra && <> · {extra}</>}
-      </div>
-      <div className="mt-3 text-right">
-        <div className={`text-[36px] font-bold num leading-none ${accentGold ? "text-spc-gold" : "text-spc-dark"}`}>{points}</div>
-        <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold mt-1">Punkte</div>
+    <div className={`bg-white rounded-2xl p-4 shadow-cs-sm relative overflow-hidden ${accentGold ? "ring-1 ring-spc-gold/25" : ""}`}>
+      {accentGold && <div className="absolute left-0 top-0 bottom-0 w-1 bg-spc-gold" />}
+      <div className={`text-[10.5px] uppercase tracking-widest font-bold mb-2 ${accentGold ? "text-spc-goldDeep" : "text-ink-3"}`}>{label}</div>
+      <div className="grid grid-cols-[64px_1fr_auto] gap-3 items-center">
+        <div className="w-16 h-10 flex items-center justify-center shrink-0">
+          <FishPhoto species={species} className="w-full h-full object-contain" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[15.5px] font-bold text-spc-dark leading-tight truncate">{SPECIES[species]} {lengthCm} cm</div>
+          <div className="text-[12px] text-ink-3 mt-0.5 truncate">
+            {userName} · {timeStr}
+            {extra && <span className="ml-1 inline-block bg-success/15 text-success text-[9.5px] px-1 py-0.5 rounded font-bold uppercase tracking-wider">TW</span>}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className={`text-[24px] font-bold num leading-none ${accentGold ? "text-spc-gold" : "text-spc-dark"}`}>{points}</div>
+          <div className="text-[9px] uppercase tracking-widest text-ink-3 font-bold mt-0.5">Pkt</div>
+        </div>
       </div>
     </div>
   );

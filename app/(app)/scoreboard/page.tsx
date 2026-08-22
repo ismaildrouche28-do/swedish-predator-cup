@@ -114,3 +114,79 @@ export default async function ScoreboardPage() {
 function NoComp() {
   return <div className="bg-white rounded-3xl p-10 text-center shadow-cs-sm"><div className="text-5xl mb-3">🎣</div><div className="text-[20px] font-bold text-spc-dark">Kein Wettkampf</div></div>;
 }
+
+function PointsChart({ catches }: { catches: any[] }) {
+  const scored = catches.filter(c => c.is_scored).sort((a, b) => +new Date(a.caught_at) - +new Date(b.caught_at));
+  if (scored.length === 0) return <div className="text-[13px] text-ink-3 italic py-4 text-center">Noch keine gewerteten Fänge.</div>;
+  let cum = 0;
+  const pts = scored.map(c => { cum += c.total_points; return { t: new Date(c.caught_at).getTime(), p: cum }; });
+  const W = 500, H = 160, padL = 30, padR = 10, padT = 12, padB = 20;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const maxY = Math.max(...pts.map(p => p.p), 100);
+  const tMin = pts[0].t, tMax = pts[pts.length - 1].t;
+  const range = Math.max(tMax - tMin, 60_000);
+  const x = (t: number) => padL + ((t - tMin) / range) * iw;
+  const y = (v: number) => padT + ih - (v / maxY) * ih;
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(p.t).toFixed(1)} ${y(p.p).toFixed(1)}`).join(" ");
+  const area = `${line} L ${x(pts[pts.length - 1].t).toFixed(1)} ${padT + ih} L ${x(pts[0].t).toFixed(1)} ${padT + ih} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="max-w-full">
+      <defs>
+        <linearGradient id="pt-fill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#0a6db8" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#0a6db8" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75, 1].map(f => {
+        const yy = padT + ih * (1 - f);
+        return <line key={f} x1={padL} x2={W - padR} y1={yy} y2={yy} stroke="#e5e5ea" />;
+      })}
+      <path d={area} fill="url(#pt-fill)" />
+      <path d={line} stroke="#0a6db8" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <circle key={i} cx={x(p.t)} cy={y(p.p)} r={i === pts.length - 1 ? 5 : 3.5}
+          fill={i === pts.length - 1 ? "#0a6db8" : "#ffffff"} stroke="#0a6db8" strokeWidth="2" />
+      ))}
+    </svg>
+  );
+}
+
+function SpeciesDonut({ scored }: { scored: any[] }) {
+  const COLORS: any = { perch: "#e8b247", zander: "#0a6db8", pike: "#0a3d5c" };
+  const NAMES: any = { perch: "Barsch", zander: "Zander", pike: "Hecht" };
+  const counts = { perch: 0, zander: 0, pike: 0 } as any;
+  for (const c of scored) counts[c.species]++;
+  const total = scored.length || 1;
+  const size = 130, stroke = 22, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <div className="flex items-center gap-5">
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="shrink-0">
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f0f0f4" strokeWidth={stroke} />
+        {(["perch","zander","pike"] as const).map(sp => {
+          const val = counts[sp] / total;
+          if (val === 0) return null;
+          const dash = val * circ;
+          const el = <circle key={sp} cx={size/2} cy={size/2} r={r} fill="none"
+            stroke={COLORS[sp]} strokeWidth={stroke}
+            strokeDasharray={`${dash} ${circ - dash}`}
+            strokeDashoffset={-offset}
+            transform={`rotate(-90 ${size/2} ${size/2})`} />;
+          offset += dash;
+          return el;
+        })}
+      </svg>
+      <div className="flex-1 space-y-1.5 text-[13px]">
+        {(["perch","zander","pike"] as const).map(sp => (
+          <div key={sp} className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-sm" style={{ background: COLORS[sp] }} />
+            <span className="flex-1 font-semibold text-spc-dark">{NAMES[sp]}</span>
+            <span className="text-ink-2 num font-bold">{counts[sp]}</span>
+            <span className="text-ink-3 num text-[12px] w-[40px] text-right">{Math.round((counts[sp] / total) * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+

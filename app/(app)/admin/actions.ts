@@ -65,3 +65,24 @@ export async function adminLogout() {
   const { redirect } = await import("next/navigation");
   redirect("/profil-waehlen");
 }
+
+
+export async function createPresetProfiles() {
+  requireAdmin();
+  const presets = [
+    { name: "Erik Kappel",       nickname: "Erik" },
+    { name: "Tim Mußmann",       nickname: "Tim" },
+    { name: "Jan Dierking",      nickname: "Jan" },
+    { name: "Stefan Schlichting",nickname: "Stefan" },
+    { name: "Denis Stuchlik",    nickname: "Denis" },
+  ];
+  const results: any[] = [];
+  for (const p of presets) {
+    const { data: existing } = await supabaseAdmin.from("users").select("id").eq("name", p.name).maybeSingle();
+    if (existing) { results.push({ name: p.name, existed: true }); continue; }
+    const { error } = await supabaseAdmin.from("users").insert({ ...p, is_active: true, onboarding_done: true });
+    results.push({ name: p.name, ok: !error, error: error?.message });
+  }
+  revalidatePath("/", "layout");
+  return { results };
+}

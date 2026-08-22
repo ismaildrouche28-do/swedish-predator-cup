@@ -1,6 +1,6 @@
 "use client";
 import { useTransition, useState } from "react";
-import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout } from "./actions";
+import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout, createPresetProfiles } from "./actions";
 
 export function CreateProfileForm() {
   const [pending, start] = useTransition();
@@ -53,5 +53,24 @@ export function AdminLogoutButton() {
         Admin abmelden
       </button>
     </form>
+  );
+}
+
+
+export function PresetProfilesButton() {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <>
+      <button onClick={() => start(async () => {
+        const r = await createPresetProfiles();
+        const anyOk = r?.results?.some((x: any) => x.ok);
+        setMsg(anyOk ? "Standard-Teilnehmer angelegt." : "Alle Preset-Teilnehmer existieren bereits.");
+      })} disabled={pending}
+        className="px-4 py-2 rounded-xl bg-white border border-spc-mid text-spc-mid text-[13px] font-bold disabled:opacity-50 hover:bg-spc-lighter/40 transition mt-2">
+        {pending ? "…" : "Standard-Teilnehmer anlegen (Erik, Tim, Jan, Stefan, Denis)"}
+      </button>
+      {msg && <div className="text-[12.5px] text-spc-mid mt-2 font-semibold">{msg}</div>}
+    </>
   );
 }

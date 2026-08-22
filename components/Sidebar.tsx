@@ -5,7 +5,7 @@ import { Icons } from "./Icons";
 
 const NAV_BASE = [
   { section: "Wettkampf", items: [
-    { href: "/",           label: "Dashboard",       icon: Icons.home },
+    { href: "/",           label: "Home",       icon: Icons.home },
     { href: "/live",       label: "Live-Ranking",    icon: Icons.live },
     { href: "/scoreboard", label: "Mein Scoreboard", icon: Icons.board },
     { href: "/fang",       label: "Fang erfassen",   icon: Icons.fish },

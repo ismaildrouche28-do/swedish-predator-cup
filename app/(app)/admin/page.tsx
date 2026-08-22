@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { KpiCard } from "@/components/KpiCard";
-import { ProfileActions, CreateProfileForm, AdminLogoutButton } from "./AdminClient";
+import { ProfileActions, CreateProfileForm, AdminLogoutButton, PresetProfilesButton } from "./AdminClient";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,7 @@ export default async function AdminPage() {
         <div className="text-[16px] font-bold text-spc-dark mb-1">Profile anlegen</div>
         <p className="text-[13px] text-ink-3 mb-3">Jeder Teilnehmer bekommt ein Profil. Es wird auf der Login-Seite zur Auswahl angezeigt.</p>
         <CreateProfileForm />
+        <PresetProfilesButton />
       </div>
 
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
