@@ -70,11 +70,12 @@ export async function adminLogout() {
 export async function createPresetProfiles() {
   requireAdmin();
   const presets = [
-    { name: "Erik Kappel",        nickname: "Erik K." },
-    { name: "Tim Mußmann",        nickname: "Tim M." },
-    { name: "Jan Dierking",       nickname: "Jan D." },
-    { name: "Stefan Schlichting", nickname: "Stefan S." },
-    { name: "Denis Stuchlik",     nickname: "Denis S." },
+    { name: "Admin",              nickname: "Admin",       is_admin: true  },
+    { name: "Erik Kappel",        nickname: "Erik K.",     is_admin: false },
+    { name: "Tim Mußmann",        nickname: "Tim M.",      is_admin: false },
+    { name: "Jan Dierking",       nickname: "Jan D.",      is_admin: false },
+    { name: "Stefan Schlichting", nickname: "Stefan S.",   is_admin: false },
+    { name: "Denis Stuchlik",     nickname: "Denis S.",    is_admin: false },
   ];
   const results: any[] = [];
   for (const p of presets) {
@@ -96,7 +97,7 @@ export async function createPresetProfiles() {
 export async function deactivateNonPresetProfiles() {
   requireAdmin();
   const preservedNames = [
-    "Erik Kappel", "Tim Mußmann", "Jan Dierking", "Stefan Schlichting", "Denis Stuchlik"
+    "Admin", "Erik Kappel", "Tim Mußmann", "Jan Dierking", "Stefan Schlichting", "Denis Stuchlik"
   ];
   const { error } = await supabaseAdmin
     .from("users")

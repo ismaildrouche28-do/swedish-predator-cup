@@ -9,6 +9,7 @@ export function middleware(req: NextRequest) {
     path.startsWith("/api/set-profile") ||
     path.startsWith("/api/logout") ||
     path.startsWith("/api/debug") ||
+    path.startsWith("/setup-initial") ||
     path.startsWith("/test") ||
     path.startsWith("/_next") ||
     /\.(png|jpg|jpeg|svg|ico|webp|woff2?)$/.test(path);

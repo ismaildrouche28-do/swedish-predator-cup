@@ -11,8 +11,9 @@ export default async function ProfilWaehlen() {
 
   const { data: profiles, error } = await supabaseAdmin
     .from("users")
-    .select("id, name, nickname, avatar_url")
+    .select("id, name, nickname, avatar_url, is_admin")
     .eq("is_active", true)
+    .order("is_admin", { ascending: false })
     .order("name");
 
   return (
@@ -39,11 +40,22 @@ export default async function ProfilWaehlen() {
               <form key={p.id} action={pickProfile}>
                 <input type="hidden" name="profileId" value={p.id} />
                 <button type="submit"
-                  className="w-full rounded-2xl p-4 bg-spc-greyLight hover:bg-spc-lighter/60 text-center transition group">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-spc-mid text-white flex items-center justify-center text-[28px] font-bold overflow-hidden mb-2 group-hover:ring-4 group-hover:ring-spc-mid/30 transition">
+                  className={`w-full rounded-2xl p-4 text-center transition group ${
+                    p.is_admin
+                      ? "bg-spc-gold/15 border-2 border-spc-gold hover:bg-spc-gold/25"
+                      : "bg-spc-greyLight hover:bg-spc-lighter/60"
+                  }`}>
+                  <div className={`w-20 h-20 mx-auto rounded-full text-white flex items-center justify-center text-[28px] font-bold overflow-hidden mb-2 group-hover:ring-4 transition ${
+                    p.is_admin
+                      ? "bg-spc-goldDeep group-hover:ring-spc-gold/30"
+                      : "bg-spc-mid group-hover:ring-spc-mid/30"
+                  }`}>
                     {p.avatar_url ? <img src={p.avatar_url} alt="" className="w-full h-full object-cover" /> : (p.nickname ?? p.name ?? "?").slice(0,1).toUpperCase()}
                   </div>
-                  <div className="text-[15px] font-bold text-spc-dark">{p.nickname ?? p.name}</div>
+                  <div className={`text-[15px] font-bold ${p.is_admin ? "text-spc-goldDeep" : "text-spc-dark"}`}>
+                    {p.nickname ?? p.name}
+                  </div>
+                  {p.is_admin && <div className="text-[10px] uppercase tracking-widest font-bold text-spc-goldDeep mt-0.5">Verwaltung</div>}
                 </button>
               </form>
             ))}
@@ -51,7 +63,7 @@ export default async function ProfilWaehlen() {
         )}
 
         <div className="mt-6 text-center border-t border-black/[0.06] pt-4 flex items-center justify-between">
-          <Link href="/admin/login" className="text-[13px] text-spc-mid font-semibold hover:underline">Admin-Bereich →</Link>
+          <Link href="/admin/login" className="text-[13px] text-spc-mid font-semibold hover:underline">Admin-PIN eingeben →</Link>
           <form action={logoutApp}>
             <button className="text-[12px] text-ink-3 hover:text-danger">Zugangscode zurücksetzen</button>
           </form>
