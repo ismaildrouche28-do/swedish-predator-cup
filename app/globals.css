@@ -21,7 +21,7 @@ body {
 }
 
 /* Analog Tippspiel: bg utilities */
-.bg-cs-gradient      { background: linear-gradient(90deg, #0a3d5c 0%, #0a6db8 100%); }
+.bg-cs-gradient      { background: linear-gradient(135deg, #0a3d5c 0%, #2a5f80 60%, #3a7ba3 100%); }
 .bg-cs-gradient-mid  { background: linear-gradient(90deg, #2a6a8e 0%, #7db3d9 100%); }
 .bg-cs-section       { background: #eef4f8; }
 

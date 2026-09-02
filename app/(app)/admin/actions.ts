@@ -86,3 +86,76 @@ export async function createPresetProfiles() {
   revalidatePath("/", "layout");
   return { results };
 }
+
+
+export async function updateCatchAsAdmin(catchId: string, formData: FormData) {
+  requireAdmin();
+  const length_cm = parseInt(String(formData.get("length_cm") ?? "0"));
+  const topwater = formData.get("topwater") === "1";
+  const species = String(formData.get("species") ?? "") as "perch" | "zander" | "pike";
+  if (!length_cm) return { error: "Länge fehlt" };
+  const { error } = await supabaseAdmin.from("catches").update({ length_cm, topwater, species }).eq("id", catchId);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function deleteCatchAsAdmin(catchId: string) {
+  requireAdmin();
+  await supabaseAdmin.from("catches").delete().eq("id", catchId);
+  revalidatePath("/", "layout");
+}
+
+export async function deletePenaltyAsAdmin(penaltyId: string) {
+  requireAdmin();
+  await supabaseAdmin.from("penalties").delete().eq("id", penaltyId);
+  revalidatePath("/", "layout");
+}
+
+// Wettkampf-Steuerung: Start / Pause / Fortsetzen / Beenden
+export async function startCompetitionAdmin(competitionId: string) {
+  requireAdmin();
+  // Auto-Generate Calls falls noch keine
+  const { count } = await supabaseAdmin.from("calls").select("id", { count: "exact", head: true }).eq("competition_id", competitionId);
+  if (!count || count === 0) {
+    const { data: comp } = await supabaseAdmin.from("competitions").select("start_at, end_at").eq("id", competitionId).maybeSingle();
+    if (comp?.start_at && comp?.end_at) {
+      const start = new Date(comp.start_at).getTime();
+      const end = new Date(comp.end_at).getTime();
+      const { data: boats } = await supabaseAdmin.from("boats").select("id, sort_order").eq("competition_id", competitionId).order("sort_order");
+      const rows: any[] = [];
+      for (const b of boats ?? []) {
+        const { data: members } = await supabaseAdmin.from("boat_members").select("user_id").eq("boat_id", b.id);
+        if (!members?.length) continue;
+        const chunk = (end - start) / members.length;
+        for (let i = 0; i < members.length; i++) {
+          const cs = new Date(start + chunk * i).toISOString();
+          const ce = new Date(start + chunk * (i + 1)).toISOString();
+          const ct = members.length === 1 ? "morning" : i === 0 ? "morning" : i === members.length - 1 ? "late" : "mid";
+          rows.push({ competition_id: competitionId, boat_id: b.id, user_id: members[i].user_id, call_type: ct, start_at: cs, end_at: ce });
+        }
+      }
+      if (rows.length) await supabaseAdmin.from("calls").insert(rows);
+    }
+  }
+  await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  revalidatePath("/", "layout");
+}
+
+export async function pauseCompetitionAdmin(competitionId: string) {
+  requireAdmin();
+  await supabaseAdmin.from("competitions").update({ status: "paused", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  revalidatePath("/", "layout");
+}
+
+export async function resumeCompetitionAdmin(competitionId: string) {
+  requireAdmin();
+  await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  revalidatePath("/", "layout");
+}
+
+export async function finishCompetitionAdmin(competitionId: string) {
+  requireAdmin();
+  await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  revalidatePath("/", "layout");
+}

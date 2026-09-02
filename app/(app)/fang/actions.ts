@@ -2,9 +2,8 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export async function saveCatch(formData: FormData) {
+export async function saveCatch(formData: FormData): Promise<{ error?: string; ok?: boolean; catchId?: string; improved?: boolean }> {
   const user = await requireAuth();
   const competition_id = String(formData.get("competition_id") ?? "");
   const species = String(formData.get("species") ?? "") as "perch" | "zander" | "pike";
@@ -12,13 +11,22 @@ export async function saveCatch(formData: FormData) {
   const topwater = formData.get("topwater") === "1";
   if (!competition_id || !species || !length_cm) return { error: "Alle Felder ausfüllen" };
 
-  const { error } = await supabaseAdmin.from("catches").insert({
+  // Punkte VOR dem Insert
+  const { data: rankBefore } = await supabaseAdmin.from("live_ranking").select("points").eq("competition_id", competition_id).eq("user_id", user.id).maybeSingle();
+  const pointsBefore = rankBefore?.points ?? 0;
+
+  const { data: inserted, error } = await supabaseAdmin.from("catches").insert({
     competition_id, user_id: user.id, species, length_cm, topwater,
-  });
+  }).select("id").single();
   if (error) return { error: error.message };
 
+  // Punkte NACH dem Insert (Trigger hat inzwischen recompute gemacht)
+  const { data: rankAfter } = await supabaseAdmin.from("live_ranking").select("points").eq("competition_id", competition_id).eq("user_id", user.id).maybeSingle();
+  const pointsAfter = rankAfter?.points ?? 0;
+
+  const improved = pointsAfter > pointsBefore;
   revalidatePath("/", "layout");
-  redirect("/scoreboard");
+  return { ok: true, catchId: inserted?.id, improved };
 }
 
 export async function savePenalty(formData: FormData) {
@@ -38,5 +46,5 @@ export async function savePenalty(formData: FormData) {
   });
   if (error) return { error: error.message };
   revalidatePath("/", "layout");
-  redirect("/scoreboard");
+  return { ok: true };
 }

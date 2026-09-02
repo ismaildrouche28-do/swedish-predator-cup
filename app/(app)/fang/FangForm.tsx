@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { saveCatch, savePenalty } from "./actions";
 import { FishPhoto } from "@/components/Icons";
 
@@ -15,6 +16,8 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
   const [topwater, setTopwater] = useState(false);
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "improved" | "same"; text: string } | null>(null);
+  const router = useRouter();
 
   const rule = SPECIES.find(s => s.key === species)!;
   const l = parseInt(length) || 0;
@@ -89,7 +92,16 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
           fd.set("length_cm", length);
           fd.set("topwater", topwater ? "1" : "0");
           const r = await saveCatch(fd);
-          if (r?.error) setErr(r.error);
+          if (r?.error) { setErr(r.error); return; }
+          if (r?.improved) {
+            setToast({ type: "improved", text: "Fang gespeichert · Punkte-Verbesserung! ✨" });
+            setLength(""); setTopwater(false);
+            setTimeout(() => router.push("/scoreboard"), 1500);
+          } else {
+            setToast({ type: "same", text: "Fang gespeichert · Keine Verbesserung" });
+            setLength(""); setTopwater(false);
+            setTimeout(() => { setToast(null); }, 2000);
+          }
         })}>
           <button disabled={pending || !l} className="w-full py-3.5 rounded-2xl bg-spc-dark text-white font-bold text-[15px] disabled:opacity-50 hover:bg-spc-mid transition">
             {pending ? "Speichere…" : "Fang eintragen"}
@@ -118,6 +130,13 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
           ))}
         </div>
       </div>
+      {toast && (
+        <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-cs font-bold text-[14px] transition ${
+          toast.type === "improved" ? "bg-success text-white" : "bg-spc-mid text-white"
+        }`}>
+          {toast.text}
+        </div>
+      )}
     </>
   );
 }

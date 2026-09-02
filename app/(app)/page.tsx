@@ -289,16 +289,73 @@ function PrepState({ comp }: { comp: any }) {
   );
 }
 
-function FinishedState({ comp }: { comp: any }) {
+async function FinishedState({ comp }: { comp: any }) {
+  const [ranking, topFish] = await Promise.all([getLiveRanking(comp.id), getTopFish(comp.id)]);
+  const winner = ranking[0];
+  const podium = ranking.slice(0, 3);
   return (
-    <section className="bg-cs-section rounded-3xl p-6 sm:p-8">
-      <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Beendet</div>
-      <h1 className="text-3xl font-bold text-spc-dark tracking-tight">{comp.name}</h1>
-      <p className="text-[14.5px] text-ink-2 mt-2 mb-5 max-w-[56ch]">Der Wettkampf ist zu Ende.</p>
+    <div>
+      <section className="bg-cs-gradient shadow-cs rounded-3xl p-6 mb-4 text-white text-center">
+        <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-1">🏁 Wettkampf beendet</div>
+        <h1 className="text-3xl font-bold tracking-tight">{comp.name}</h1>
+        {winner && (
+          <div className="mt-5">
+            <div className="text-[11px] uppercase tracking-widest text-white/60 font-bold mb-1">Sieger</div>
+            <div className="text-[36px] font-bold leading-tight">🏆 {winner.nickname ?? winner.display_name}</div>
+            <div className="text-[15px] text-white/85 mt-1">{winner.points ?? 0} Punkte · {winner.scored_count ?? 0} Fänge</div>
+          </div>
+        )}
+      </section>
+
+      {podium.length > 0 && (
+        <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
+          <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-3">Endstand · Podium</div>
+          <div className="grid sm:grid-cols-3 gap-2.5">
+            {podium.map((r: any, i: number) => {
+              const styles = ["bg-gradient-to-br from-amber-300 to-amber-500 text-amber-950",
+                              "bg-gradient-to-br from-gray-200 to-gray-400 text-gray-700",
+                              "bg-gradient-to-br from-orange-300 to-orange-500 text-white"];
+              const medals = ["🥇", "🥈", "🥉"];
+              return (
+                <div key={r.user_id} className={`rounded-2xl p-4 text-center ${styles[i]}`}>
+                  <div className="text-4xl mb-1">{medals[i]}</div>
+                  <div className="text-[16px] font-bold">{r.nickname ?? r.display_name}</div>
+                  <div className="text-[13px] mt-0.5 opacity-90">{r.points ?? 0} Pkt</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {ranking.length > 3 && (
+        <div className="bg-white rounded-3xl overflow-hidden shadow-cs-sm mb-3">
+          <div className="px-5 pt-4 pb-2 text-[11px] uppercase tracking-widest text-ink-3 font-bold">Restliche Platzierungen</div>
+          {ranking.slice(3).map((r: any, idx: number) => (
+            <div key={r.user_id} className="grid grid-cols-[42px_1fr_68px] gap-3 items-center px-5 py-3 border-t border-black/[0.04]">
+              <div className="w-8 h-8 rounded-full bg-spc-greyLight text-ink-3 flex items-center justify-center font-bold text-[14px] num">{idx + 4}</div>
+              <div className="font-bold text-[15px]">{r.nickname ?? r.display_name}</div>
+              <div className="text-right text-[18px] font-bold num">{r.points ?? 0}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {topFish && (
+        <div className="bg-white rounded-2xl px-4 py-3 shadow-cs-sm mb-3 flex items-center gap-3 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-spc-gold" />
+          <span className="text-[10px] uppercase tracking-widest text-spc-goldDeep font-bold pl-1">Top-Fisch</span>
+          <div className="flex-1 text-[14px] font-bold text-spc-dark">
+            {({perch:"Barsch",zander:"Zander",pike:"Hecht"} as any)[topFish.species]} {topFish.length_cm} cm
+          </div>
+          <div className="text-[18px] font-bold text-spc-gold num">{topFish.total_points}</div>
+        </div>
+      )}
+
       <div className="flex gap-2 flex-wrap">
-        <Link href="/live" className="px-5 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm">Ranking</Link>
-        <Link href="/historie" className="px-5 py-3 rounded-2xl bg-white text-spc-dark font-semibold shadow-cs-sm">Historie</Link>
+        <Link href="/historie" className="px-5 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm">Alle Fänge ansehen</Link>
+        <Link href="/hof" className="px-5 py-3 rounded-2xl bg-white text-spc-dark font-semibold shadow-cs-sm">Hall of Fame</Link>
       </div>
-    </section>
+    </div>
   );
 }
