@@ -1,11 +1,12 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
 import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton } from "./SetupForm";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function SetupPage() {
-  await requireAuth();
+  requireAdmin();
   const active = await getActiveCompetition();
   const prep = active ? null : await getPrepCompetition();
   const comp = active ?? prep;

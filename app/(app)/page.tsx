@@ -272,7 +272,7 @@ function EmptyState({ nickname }: { nickname: string }) {
         <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Kein Wettkampf</div>
         <h1 className="text-3xl font-bold text-spc-dark tracking-tight">Moin, {nickname}</h1>
         <p className="text-[14.5px] text-ink-2 mt-2 mb-5 max-w-[56ch]">Aktuell läuft kein SPC. Leg im Setup einen neuen an.</p>
-        <Link href="/setup" className="inline-block px-6 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm hover:bg-spc-mid transition">Zum Setup →</Link>
+        <Link href="/admin/wettkampf-neu" className="inline-block px-6 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm hover:bg-spc-mid transition">Zum Setup →</Link>
       </section>
     </div>
   );
@@ -284,7 +284,7 @@ function PrepState({ comp }: { comp: any }) {
       <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">In Vorbereitung</div>
       <h1 className="text-3xl font-bold text-spc-dark tracking-tight">{comp.name}</h1>
       <p className="text-[14.5px] text-ink-2 mt-2 mb-5 max-w-[56ch]">Der Wettkampf ist angelegt, aber noch nicht gestartet.</p>
-      <Link href="/setup" className="inline-block px-6 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm hover:bg-spc-mid transition">Zum Setup →</Link>
+      <Link href="/admin/wettkampf-neu" className="inline-block px-6 py-3 rounded-2xl bg-spc-dark text-white font-semibold shadow-cs-sm hover:bg-spc-mid transition">Zum Setup →</Link>
     </section>
   );
 }

@@ -14,14 +14,18 @@ const NAV = [
   { href: "/hof",        label: "Hall of Fame",    icon: Icons.trophy },
   { href: "/stats",      label: "Meine Statistik", icon: Icons.stats },
   { href: "/profil",     label: "Mein Profil",     icon: Icons.user },
-  { href: "/setup",      label: "Einstellungen",   icon: Icons.settings },
 ];
 
 export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; avatarUrl?: string | null; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const path = usePathname();
   const initial = (nickname ?? "?").slice(0, 1).toUpperCase();
-  const nav = isAdmin ? [...NAV, { href: "/admin", label: "Verwaltung", icon: Icons.trophyFilled }] : NAV;
+  const nav = isAdmin ? [
+    ...NAV,
+    { href: "/admin",              label: "Admin · Übersicht",     icon: Icons.trophyFilled },
+    { href: "/admin/wettkampf-neu",label: "Admin · Wettkampf aufbauen", icon: Icons.settings },
+    { href: "/admin/wettkampf",    label: "Admin · Wettkampf steuern",  icon: Icons.live },
+  ] : NAV;
   return (
     <>
       <header className="lg:hidden blur-bar sticky top-0 z-30 border-b border-black/[0.10] flex items-center justify-between px-4 safe-pt pb-3">

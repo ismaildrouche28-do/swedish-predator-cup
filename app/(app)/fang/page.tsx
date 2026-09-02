@@ -14,7 +14,7 @@ export default async function FangPage() {
       <div className="text-5xl mb-3">🎣</div>
       <div className="text-[20px] font-bold text-spc-dark mb-2">Kein laufender Wettkampf</div>
       <p className="text-ink-3 text-[14px] mb-5">Fänge können nur während eines laufenden SPC erfasst werden.</p>
-      <Link href="/setup" className="inline-block px-5 py-3 rounded-2xl bg-spc-dark text-white font-bold shadow-cs-sm">Zum Setup</Link>
+      <Link href="/admin/wettkampf-neu" className="inline-block px-5 py-3 rounded-2xl bg-spc-dark text-white font-bold shadow-cs-sm">Zum Setup</Link>
     </div>
   );
   const { data: settings } = await supabaseAdmin.from("competition_settings").select("topwater_bonus").eq("competition_id", comp.id).maybeSingle();

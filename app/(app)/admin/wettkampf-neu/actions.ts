@@ -1,11 +1,12 @@
 "use server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin, requireProfile } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createCompetition(formData: FormData) {
-  const user = await requireAuth();
+  requireAdmin();
+  const user = await requireProfile();
   const name = String(formData.get("name") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim() || null;
   const start_at = String(formData.get("start_at") ?? "") || null;
@@ -25,11 +26,11 @@ export async function createCompetition(formData: FormData) {
   ]);
 
   revalidatePath("/", "layout");
-  redirect("/setup");
+  redirect("/admin/wettkampf-neu");
 }
 
 export async function addParticipantById(userId: string, boatId: string) {
-  await requireAuth();
+  requireAdmin();
   if (!userId || !boatId) return { error: "User und Boot erforderlich" };
   const { data: boat } = await supabaseAdmin.from("boats").select("competition_id").eq("id", boatId).maybeSingle();
   if (boat) {
@@ -43,22 +44,19 @@ export async function addParticipantById(userId: string, boatId: string) {
     }
   }
   await supabaseAdmin.from("boat_members").upsert({ boat_id: boatId, user_id: userId });
-  revalidatePath("/setup");
+  revalidatePath("/admin/wettkampf-neu");
 }
 
 export async function removeParticipant(boatId: string, userId: string) {
-  await requireAuth();
+  requireAdmin();
   await supabaseAdmin.from("boat_members").delete().eq("boat_id", boatId).eq("user_id", userId);
-  revalidatePath("/setup");
+  revalidatePath("/admin/wettkampf-neu");
 }
 
-// Calls automatisch generieren: jeder Boots-Member bekommt ein gleich langes Zeitfenster
-// zwischen start_at und end_at.
 async function generateCallsForCompetition(competitionId: string) {
   const { data: comp } = await supabaseAdmin.from("competitions").select("start_at, end_at").eq("id", competitionId).maybeSingle();
   if (!comp?.start_at || !comp?.end_at) return { error: "Wettkampf braucht Start- und Endzeit" };
 
-  // Alte Calls weg
   await supabaseAdmin.from("calls").delete().eq("competition_id", competitionId);
 
   const { data: boats } = await supabaseAdmin.from("boats").select("id, label, sort_order").eq("competition_id", competitionId).order("sort_order");
@@ -97,15 +95,14 @@ async function generateCallsForCompetition(competitionId: string) {
 }
 
 export async function autoGenerateCalls(competitionId: string) {
-  await requireAuth();
+  requireAdmin();
   const r = await generateCallsForCompetition(competitionId);
   revalidatePath("/", "layout");
   return r;
 }
 
 export async function startCompetition(competitionId: string) {
-  await requireAuth();
-  // Falls noch keine Calls: automatisch generieren
+  requireAdmin();
   const { count } = await supabaseAdmin.from("calls").select("id", { count: "exact", head: true }).eq("competition_id", competitionId);
   if (!count || count === 0) await generateCallsForCompetition(competitionId);
 
@@ -115,7 +112,7 @@ export async function startCompetition(competitionId: string) {
 }
 
 export async function finishCompetition(competitionId: string) {
-  await requireAuth();
+  requireAdmin();
   await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
   revalidatePath("/", "layout");
   redirect("/");

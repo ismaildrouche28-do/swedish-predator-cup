@@ -18,14 +18,17 @@ const NAV_BASE = [
   ]},
   { section: "Konto", items: [
     { href: "/profil",     label: "Mein Profil",     icon: Icons.user },
-    { href: "/setup",      label: "Einstellungen",   icon: Icons.settings },
   ]},
 ];
 
 export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; avatarUrl?: string | null; isAdmin?: boolean }) {
   const path = usePathname();
   const nav = isAdmin
-    ? [...NAV_BASE, { section: "Admin", items: [{ href: "/admin", label: "Verwaltung", icon: Icons.trophyFilled }] }]
+    ? [...NAV_BASE, { section: "Admin", items: [
+        { href: "/admin",           label: "Übersicht",         icon: Icons.trophyFilled },
+        { href: "/admin/wettkampf-neu", label: "Wettkampf aufbauen", icon: Icons.settings },
+        { href: "/admin/wettkampf", label: "Wettkampf steuern", icon: Icons.live },
+      ]}]
     : NAV_BASE;
   return (
     <aside className="hidden lg:flex flex-col bg-white w-[240px] shrink-0 sticky top-0 h-screen overflow-y-auto py-6 px-3 border-r border-black/[0.06]">
