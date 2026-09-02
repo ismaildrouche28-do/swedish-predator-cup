@@ -70,22 +70,43 @@ export async function adminLogout() {
 export async function createPresetProfiles() {
   requireAdmin();
   const presets = [
-    { name: "Erik Kappel",       nickname: "Erik" },
-    { name: "Tim Mußmann",       nickname: "Tim" },
-    { name: "Jan Dierking",      nickname: "Jan" },
-    { name: "Stefan Schlichting",nickname: "Stefan" },
-    { name: "Denis Stuchlik",    nickname: "Denis" },
+    { name: "Erik Kappel",        nickname: "Erik K." },
+    { name: "Tim Mußmann",        nickname: "Tim M." },
+    { name: "Jan Dierking",       nickname: "Jan D." },
+    { name: "Stefan Schlichting", nickname: "Stefan S." },
+    { name: "Denis Stuchlik",     nickname: "Denis S." },
   ];
   const results: any[] = [];
   for (const p of presets) {
+    // Update falls Name schon existiert (idempotent)
     const { data: existing } = await supabaseAdmin.from("users").select("id").eq("name", p.name).maybeSingle();
-    if (existing) { results.push({ name: p.name, existed: true }); continue; }
-    const { error } = await supabaseAdmin.from("users").insert({ ...p, is_active: true, onboarding_done: true });
-    results.push({ name: p.name, ok: !error, error: error?.message });
+    if (existing) {
+      await supabaseAdmin.from("users").update({ nickname: p.nickname, is_active: true, onboarding_done: true }).eq("id", existing.id);
+      results.push({ name: p.name, updated: true });
+    } else {
+      const { error } = await supabaseAdmin.from("users").insert({ ...p, is_active: true, onboarding_done: true });
+      results.push({ name: p.name, ok: !error, error: error?.message });
+    }
   }
   revalidatePath("/", "layout");
   return { results };
 }
+
+// Deaktiviert ALLE Profile ausser den 5 echten Wettkampf-Teilnehmern
+export async function deactivateNonPresetProfiles() {
+  requireAdmin();
+  const preservedNames = [
+    "Erik Kappel", "Tim Mußmann", "Jan Dierking", "Stefan Schlichting", "Denis Stuchlik"
+  ];
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({ is_active: false })
+    .not("name", "in", `(${preservedNames.map(n => `"${n}"`).join(",")})`);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 
 
 export async function updateCatchAsAdmin(catchId: string, formData: FormData) {

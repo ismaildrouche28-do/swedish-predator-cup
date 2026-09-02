@@ -1,6 +1,6 @@
 "use client";
 import { useTransition, useState } from "react";
-import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout, createPresetProfiles } from "./actions";
+import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout, createPresetProfiles, deactivateNonPresetProfiles } from "./actions";
 
 export function CreateProfileForm() {
   const [pending, start] = useTransition();
@@ -60,17 +60,43 @@ export function AdminLogoutButton() {
 export function PresetProfilesButton() {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const [confirmClean, setConfirmClean] = useState(false);
+
+  const runPreset = () => start(async () => {
+    setMsg(null);
+    const r = await createPresetProfiles();
+    setMsg(`${r?.results?.length ?? 0} Profile angelegt/aktualisiert (Erik K., Tim M., Jan D., Stefan S., Denis S.)`);
+  });
+
+  const runCleanup = () => start(async () => {
+    setMsg(null);
+    const r = await deactivateNonPresetProfiles();
+    if (r?.error) setMsg("Fehler: " + r.error);
+    else setMsg("Alle nicht-Wettkampf-Profile deaktiviert.");
+    setConfirmClean(false);
+  });
+
   return (
-    <>
-      <button onClick={() => start(async () => {
-        const r = await createPresetProfiles();
-        const anyOk = r?.results?.some((x: any) => x.ok);
-        setMsg(anyOk ? "Standard-Teilnehmer angelegt." : "Alle Preset-Teilnehmer existieren bereits.");
-      })} disabled={pending}
-        className="px-4 py-2 rounded-xl bg-white border border-spc-mid text-spc-mid text-[13px] font-bold disabled:opacity-50 hover:bg-spc-lighter/40 transition mt-2">
-        {pending ? "…" : "Standard-Teilnehmer anlegen (Erik, Tim, Jan, Stefan, Denis)"}
+    <div className="mt-3 space-y-2">
+      <button onClick={runPreset} disabled={pending}
+        className="w-full sm:w-auto px-4 py-2 rounded-xl bg-spc-dark text-white text-[13px] font-bold disabled:opacity-50 hover:bg-spc-mid transition">
+        {pending ? "…" : "🎣 Wettkampf-Teilnehmer anlegen (Erik K., Tim M., Jan D., Stefan S., Denis S.)"}
       </button>
-      {msg && <div className="text-[12.5px] text-spc-mid mt-2 font-semibold">{msg}</div>}
-    </>
+
+      {!confirmClean ? (
+        <button onClick={() => setConfirmClean(true)} disabled={pending}
+          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white border border-danger/40 text-danger text-[13px] font-bold hover:bg-danger/5 transition block">
+          🧹 Alle Test-Profile deaktivieren (nur die 5 Wettkampf-Teilnehmer bleiben aktiv)
+        </button>
+      ) : (
+        <div className="p-3 rounded-xl bg-danger/10 flex flex-wrap gap-2 items-center">
+          <span className="text-[13px] text-danger font-semibold">Sicher? Alle Profile außer den 5 Presets werden deaktiviert.</span>
+          <button onClick={runCleanup} disabled={pending} className="px-3 py-1.5 rounded-lg bg-danger text-white text-[12px] font-bold">Ja, deaktivieren</button>
+          <button onClick={() => setConfirmClean(false)} className="px-3 py-1.5 rounded-lg bg-white text-ink-3 text-[12px] font-semibold">Abbrechen</button>
+        </div>
+      )}
+
+      {msg && <div className="text-[12.5px] font-semibold bg-spc-lighter/40 text-spc-dark rounded-lg p-2">{msg}</div>}
+    </div>
   );
 }
