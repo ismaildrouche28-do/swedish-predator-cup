@@ -3,25 +3,32 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-async function biggestBySpecies(species: "perch" | "zander" | "pike") {
+async function getAdminIds(): Promise<Set<string>> {
+  const { data } = await supabaseAdmin.from("users").select("id").eq("is_admin", true);
+  return new Set((data ?? []).map((u: any) => u.id));
+}
+
+async function biggestBySpecies(species: "perch" | "zander" | "pike", adminIds: Set<string>) {
   const { data } = await supabaseAdmin.from("catches").select("*, users(name, nickname), competitions(name, start_at)")
-    .eq("species", species).eq("is_valid", true).order("length_cm", { ascending: false }).limit(1).maybeSingle();
-  return data;
+    .eq("species", species).eq("is_valid", true).order("length_cm", { ascending: false }).limit(20);
+  return (data ?? []).find((c: any) => !adminIds.has(c.user_id)) ?? null;
 }
-async function highestScore() {
+async function highestScore(adminIds: Set<string>) {
   const { data } = await supabaseAdmin.from("live_ranking").select("*, competitions(name, start_at)")
-    .order("points", { ascending: false }).limit(1).maybeSingle();
-  if (!data) return null;
-  const { data: user } = await supabaseAdmin.from("users").select("name, nickname").eq("id", (data as any).user_id).maybeSingle();
-  return { ...data, user };
+    .order("points", { ascending: false }).limit(20);
+  const row: any = (data ?? []).find((r: any) => !adminIds.has(r.user_id));
+  if (!row) return null;
+  const { data: user } = await supabaseAdmin.from("users").select("name, nickname").eq("id", row.user_id).maybeSingle();
+  return { ...row, user };
 }
-async function mostWins() {
+async function mostWins(adminIds: Set<string>) {
   const { data: comps } = await supabaseAdmin.from("competitions").select("id").eq("status", "finished");
   if (!comps || comps.length === 0) return null;
   const winsByUser: Record<string, number> = {};
   for (const c of comps) {
-    const { data: rows } = await supabaseAdmin.from("live_ranking").select("user_id, points").eq("competition_id", c.id).order("points", { ascending: false }).limit(1);
-    if (rows && rows[0]) winsByUser[rows[0].user_id!] = (winsByUser[rows[0].user_id!] ?? 0) + 1;
+    const { data: rows } = await supabaseAdmin.from("live_ranking").select("user_id, points").eq("competition_id", c.id).order("points", { ascending: false });
+    const winner = (rows ?? []).find((r: any) => !adminIds.has(r.user_id));
+    if (winner) winsByUser[winner.user_id!] = (winsByUser[winner.user_id!] ?? 0) + 1;
   }
   const entries = Object.entries(winsByUser).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) return null;
@@ -29,11 +36,12 @@ async function mostWins() {
   const { data: user } = await supabaseAdmin.from("users").select("name, nickname").eq("id", uid).maybeSingle();
   return { user, count };
 }
-async function mostParticipations() {
+async function mostParticipations(adminIds: Set<string>) {
   const { data: users } = await supabaseAdmin.from("users").select("id, name, nickname").eq("is_active", true);
   if (!users) return null;
   const counts: any[] = [];
   for (const u of users) {
+    if (adminIds.has(u.id)) continue;
     const { count } = await supabaseAdmin.from("catches").select("competition_id", { count: "exact", head: true }).eq("user_id", u.id);
     counts.push({ user: u, count: count ?? 0 });
   }
@@ -43,9 +51,10 @@ async function mostParticipations() {
 
 export default async function HofPage() {
   await requireAuth();
+  const adminIds = await getAdminIds();
   const [pike, zander, perch, high, wins, part] = await Promise.all([
-    biggestBySpecies("pike"), biggestBySpecies("zander"), biggestBySpecies("perch"),
-    highestScore(), mostWins(), mostParticipations(),
+    biggestBySpecies("pike", adminIds), biggestBySpecies("zander", adminIds), biggestBySpecies("perch", adminIds),
+    highestScore(adminIds), mostWins(adminIds), mostParticipations(adminIds),
   ]);
 
   return (

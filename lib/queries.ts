@@ -46,11 +46,14 @@ export async function getCompetitionFull(competitionId: string) {
 }
 
 export async function getLiveRanking(competitionId: string) {
-  const { data } = await supabaseAdmin
-    .from("live_ranking")
-    .select("*")
-    .eq("competition_id", competitionId);
-  const rows = (data ?? []).sort((a: any, b: any) => (b.points ?? 0) - (a.points ?? 0));
+  const [{ data }, { data: admins }] = await Promise.all([
+    supabaseAdmin.from("live_ranking").select("*").eq("competition_id", competitionId),
+    supabaseAdmin.from("users").select("id").eq("is_admin", true),
+  ]);
+  const adminIds = new Set((admins ?? []).map((a: any) => a.id));
+  const rows = (data ?? [])
+    .filter((r: any) => !adminIds.has(r.user_id))
+    .sort((a: any, b: any) => (b.points ?? 0) - (a.points ?? 0));
   return rows;
 }
 

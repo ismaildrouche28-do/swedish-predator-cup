@@ -17,11 +17,14 @@ export default async function StatsPage() {
   const compIds = new Set((participations ?? []).map((p: any) => p.competition_id));
   const myComps = (allComps ?? []).filter((c: any) => compIds.has(c.id));
 
+  const { data: admins } = await supabaseAdmin.from("users").select("id").eq("is_admin", true);
+  const adminIds = new Set((admins ?? []).map((a: any) => a.id));
   let wins = 0, podium = 0, positions: number[] = [];
   for (const c of myComps) {
     const { data: ranking } = await supabaseAdmin.from("live_ranking").select("user_id, points").eq("competition_id", c.id).order("points", { ascending: false });
     if (!ranking) continue;
-    const rank = ranking.findIndex(r => r.user_id === user.id) + 1;
+    const filtered = ranking.filter((r: any) => !adminIds.has(r.user_id));
+    const rank = filtered.findIndex(r => r.user_id === user.id) + 1;
     if (rank === 1) wins++;
     if (rank > 0 && rank <= 3) podium++;
     if (rank > 0) positions.push(rank);

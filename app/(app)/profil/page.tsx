@@ -27,11 +27,14 @@ export default async function ProfilPage() {
   const biggestZander = Math.max(0, ...(allCatches ?? []).filter((c:any)=>c.species==="zander").map((c:any)=>c.length_cm));
   const biggestPerch = Math.max(0, ...(allCatches ?? []).filter((c:any)=>c.species==="perch").map((c:any)=>c.length_cm));
 
-  // Siege
+  // Siege (Admin ausgeschlossen)
+  const { data: admins } = await supabaseAdmin.from("users").select("id").eq("is_admin", true);
+  const adminIds = new Set((admins ?? []).map((a: any) => a.id));
   let wins = 0;
   for (const fc of (finishedComps ?? [])) {
-    const { data: rank } = await supabaseAdmin.from("live_ranking").select("user_id, points").eq("competition_id", fc.id).order("points", { ascending: false }).limit(1).maybeSingle();
-    if (rank?.user_id === user.id) wins++;
+    const { data: rank } = await supabaseAdmin.from("live_ranking").select("user_id, points").eq("competition_id", fc.id).order("points", { ascending: false });
+    const winner = (rank ?? []).find((r: any) => !adminIds.has(r.user_id));
+    if (winner?.user_id === user.id) wins++;
   }
 
   // Achievements
