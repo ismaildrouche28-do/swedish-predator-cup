@@ -4,6 +4,8 @@ export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const isPublic = path === "/login" ||
+    path.startsWith("/login/") ||
+    path.startsWith("/regeln") ||
     path.startsWith("/api/login") ||
     path.startsWith("/api/admin-login") ||
     path.startsWith("/api/set-profile") ||

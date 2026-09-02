@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icons } from "./Icons";
+import { SpcLogoCompact } from "./SpcLogo";
 
 const NAV = [
   { href: "/",           label: "Home",            icon: Icons.home },
@@ -30,8 +31,7 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
           </svg>
         </button>
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl">🎣</span>
-          <span className="text-[15px] font-bold text-spc-dark tracking-tight">SPC</span>
+          <SpcLogoCompact />
         </Link>
         <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-mid text-white flex items-center justify-center text-[13px] font-bold overflow-hidden">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover"/> : initial}
@@ -44,13 +44,7 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
           <div onClick={() => setOpen(false)} className="lg:hidden fixed inset-0 bg-black/40 z-40" />
           <aside className="lg:hidden fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto safe-pt">
             <div className="px-4 pb-4 border-b border-black/[0.06] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🎣</span>
-                <div>
-                  <div className="text-[14px] font-bold text-spc-dark leading-tight">Swedish Predator Cup</div>
-                  <div className="text-[10px] font-semibold text-spc-mid">Editio 2026</div>
-                </div>
-              </div>
+              <SpcLogoCompact />
               <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-spc-greyLight text-ink-3 text-[20px]">×</button>
             </div>
             <nav className="p-2">

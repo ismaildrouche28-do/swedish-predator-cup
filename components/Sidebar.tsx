@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icons } from "./Icons";
+import { SpcLogoCompact } from "./SpcLogo";
 
 const NAV_BASE = [
   { section: "Wettkampf", items: [
@@ -28,12 +29,8 @@ export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; av
     : NAV_BASE;
   return (
     <aside className="hidden lg:flex flex-col bg-white w-[240px] shrink-0 sticky top-0 h-screen overflow-y-auto py-6 px-3 border-r border-black/[0.06]">
-      <Link href="/" className="px-3 pb-5 mb-2 border-b border-black/[0.06] flex items-center gap-2.5">
-        <span className="text-2xl">🎣</span>
-        <div>
-          <div className="text-[16px] font-bold text-spc-dark leading-tight tracking-tight">Swedish Predator Cup</div>
-          <div className="text-[11px] font-semibold text-spc-mid mt-0.5">Editio 2026</div>
-        </div>
+      <Link href="/" className="px-3 pb-5 mb-2 border-b border-black/[0.06] block">
+        <SpcLogoCompact />
       </Link>
 
       {nav.map(section => (
