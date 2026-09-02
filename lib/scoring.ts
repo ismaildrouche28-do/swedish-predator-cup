@@ -48,24 +48,38 @@ export function calcPoints(c: CatchInput, s: Settings): ScoredCatch {
   return { ...c, base_points: base, bonus_points: bonus, total_points: base + bonus, is_valid: isValid };
 }
 
+// Slot-basiertes Wertungssystem:
+//  - 3 feste Art-Slots (Hecht, Zander, Barsch) → jeweils bester Fang der Art
+//  - 3 freie Slots → bester Rest, respektiert max 4 pro Art
+// Zeitliche Reihenfolge ist irrelevant; entscheidend ist die Qualität.
 export function assignScoredSlots(catches: ScoredCatch[], s: Settings): ScoredCatch[] {
   const valid = catches.filter(c => c.is_valid);
-  const sorted = [...valid].sort((a, b) =>
-    b.total_points - a.total_points || +new Date(a.caught_at) - +new Date(b.caught_at)
-  );
+  const byPoints = (a: ScoredCatch, b: ScoredCatch) =>
+    b.total_points - a.total_points || +new Date(a.caught_at) - +new Date(b.caught_at);
 
-  const counts: Record<Species, number> = { perch: 0, zander: 0, pike: 0 };
+  const speciesList: Species[] = ["pike", "zander", "perch"];
   const scoredIds = new Set<string>();
-  let total = 0;
+  const counts: Record<Species, number> = { perch: 0, zander: 0, pike: 0 };
 
-  for (const c of sorted) {
-    if (total >= s.max_fish_total) break;
+  // 1) Feste Art-Slots
+  for (const sp of speciesList) {
+    const best = valid.filter(c => c.species === sp).sort(byPoints)[0];
+    if (best) {
+      scoredIds.add(best.id);
+      counts[sp]++;
+    }
+  }
+
+  // 2) Freie Slots
+  const freeSlots = Math.max(0, s.max_fish_total - speciesList.length);
+  const remaining = valid.filter(c => !scoredIds.has(c.id)).sort(byPoints);
+  let freeUsed = 0;
+  for (const c of remaining) {
+    if (freeUsed >= freeSlots) break;
     if (counts[c.species] >= s.max_fish_per_species) continue;
-    const variety = (counts.perch>0?1:0) + (counts.zander>0?1:0) + (counts.pike>0?1:0);
-    if (total >= 4 && variety < 3 && counts[c.species] > 0) continue;
     scoredIds.add(c.id);
     counts[c.species]++;
-    total++;
+    freeUsed++;
   }
 
   return catches.map(c => ({ ...c, is_scored: scoredIds.has(c.id) }));

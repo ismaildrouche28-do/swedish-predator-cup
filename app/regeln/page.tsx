@@ -44,8 +44,41 @@ export default function RegelnPage() {
           <ul className="text-[14px] text-ink space-y-2 leading-relaxed">
             <li><strong>Grundpunkte:</strong> Länge in cm × Art-Faktor. Ein 90 cm-Hecht = 90 Pkt, ein 60 cm-Zander = 78 Pkt, ein 30 cm-Barsch = 60 Pkt.</li>
             <li><strong>Topwater-Bonus:</strong> +10 Punkte, wenn der Fisch an einem Topwater-Köder gebissen hat. Einmal pro Wettkampf möglich.</li>
-            <li><strong>Wertung:</strong> Maximal <strong>6 gewertete Fische</strong> insgesamt, davon höchstens <strong>4 pro Art</strong>. Es zählen automatisch die punktstärksten.</li>
           </ul>
+        </Card>
+
+        {/* Slot-System */}
+        <Card title="Slot-System" kicker="Was in die Wertung fließt">
+          <p className="text-[14px] text-ink leading-relaxed mb-4">
+            Maximal <strong>6 Fische</strong> gehen in die Gesamtwertung eines Teilnehmers ein — verteilt auf 6 Slots.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-spc-lighter/60 p-4">
+              <div className="text-[10px] uppercase tracking-widest text-spc-mid font-bold mb-2">3 feste Art-Slots</div>
+              <ul className="text-[13.5px] text-ink space-y-1.5">
+                <li className="flex items-center gap-2"><Dot color="#0a3d5c" /> Hecht-Slot</li>
+                <li className="flex items-center gap-2"><Dot color="#0a6db8" /> Zander-Slot</li>
+                <li className="flex items-center gap-2"><Dot color="#5a7a5f" /> Barsch-Slot</li>
+              </ul>
+              <p className="text-[12px] text-ink-3 mt-2">Je 1 Slot pro Art — der punktstärkste Fang der Art landet automatisch hier.</p>
+            </div>
+            <div className="rounded-2xl bg-spc-gold/15 p-4">
+              <div className="text-[10px] uppercase tracking-widest text-spc-goldDeep font-bold mb-2">3 freie Slots</div>
+              <ul className="text-[13.5px] text-ink space-y-1.5">
+                <li className="flex items-center gap-2"><Dot color="#e8b247" /> Freier Slot · Hecht, Zander oder Barsch</li>
+                <li className="flex items-center gap-2"><Dot color="#e8b247" /> Freier Slot · Hecht, Zander oder Barsch</li>
+                <li className="flex items-center gap-2"><Dot color="#e8b247" /> Freier Slot · Hecht, Zander oder Barsch</li>
+              </ul>
+              <p className="text-[12px] text-ink-3 mt-2">Werden vom besten Rest gefüllt — beliebige Art, aber max. 4 Fische einer Art insgesamt.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-spc-greyLight pt-4 space-y-2 text-[14px] text-ink leading-relaxed">
+            <p><strong>Max 4 pro Art:</strong> 1 fester Art-Slot + 3 freie Slots. Beispiel: bis zu 4 Hechte, wenn keine anderen Arten gefangen wurden.</p>
+            <p><strong>Full Card (6 gewertete Fische):</strong> nur möglich, wenn alle drei Arten mindestens einmal vertreten sind.</p>
+            <p><strong>Reihenfolge egal:</strong> Nicht die ersten Fänge zählen, sondern immer die punktstärkste mögliche Kombination. Ein späterer, größerer Fisch verdrängt automatisch einen schwächeren aus der Wertung.</p>
+          </div>
         </Card>
 
         {/* Strafen */}
@@ -95,6 +128,10 @@ function Card({ title, kicker, children }: { title: string; kicker: string; chil
       {children}
     </div>
   );
+}
+
+function Dot({ color }: { color: string }) {
+  return <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />;
 }
 
 function Species({ name, name2, min, factor, img }: { name: string; name2?: string; min: string; factor: string; img: string }) {
