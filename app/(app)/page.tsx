@@ -2,6 +2,7 @@ import { requireAuth } from "@/lib/auth";
 import { getActiveCompetition, getLatestCompetition, getLiveRanking, getTopFish, getCurrentCall, getUpcomingCalls, getAllCatches, getCompetitionFull } from "@/lib/queries";
 import { supabaseAdmin } from "@/lib/supabase";
 import { Icons, FishPhoto } from "@/components/Icons";
+import { HomeClockCard } from "./live/LiveClient";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,9 @@ export default async function Dashboard() {
             : "Der Wettkampf läuft, noch keine Fänge."}
         </p>
       </div>
+
+      {/* Wettkampfuhr */}
+      {comp.start_at && comp.end_at && <HomeClockCard startAt={comp.start_at} endAt={comp.end_at} />}
 
       {/* Aktueller Call mit Fortschrittsbalken */}
       {displayCall && <CallCard call={displayCall} isMine={!!myCall} />}

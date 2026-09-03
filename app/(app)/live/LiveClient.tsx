@@ -43,6 +43,18 @@ export function LiveClock({ startAt, endAt }: { startAt: string; endAt: string }
   );
 }
 
+// Home-Variante: Uhr mit eigener Gradient-Card
+export function HomeClockCard({ startAt, endAt }: { startAt: string; endAt: string }) {
+  return (
+    <section className="bg-cs-gradient shadow-cs rounded-3xl p-5 mb-4 text-white relative overflow-hidden">
+      <div className="absolute top-3 right-4 inline-flex items-center gap-1.5 bg-danger/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
+        <span className="w-1.5 h-1.5 rounded-full bg-white pulse-dot"/> Live
+      </div>
+      <LiveClock startAt={startAt} endAt={endAt} />
+    </section>
+  );
+}
+
 // Trend-Cell: für später (braucht historische snapshots). Aktuell Placeholder mit "—"
 export function TrendCell({ userId }: { userId: string }) {
   // TODO: Trend via ranking_snapshots table (nach jedem Fang) — v0.2
