@@ -60,10 +60,27 @@ export function SpcLogoCompact({ className = "" }: { className?: string }) {
         </g>
         <text x="20" y="34" fontSize="15" fontWeight="900" fontStyle="italic" fontFamily="'Arial Black', Impact, system-ui" textAnchor="middle" fill="#0a3d5c" letterSpacing="-0.5">SPC</text>
       </svg>
-      <span className="flex flex-col leading-tight">
-        <span className="text-[15px] font-bold text-spc-dark tracking-tight">Swedish Predator Cup</span>
-        <span className="text-[10px] font-semibold text-spc-mid">Editio 2026</span>
-      </span>
+      <span className="text-[15px] font-bold text-spc-dark tracking-tight">Swedish Predator Cup</span>
     </span>
+  );
+}
+
+// Nur-Logo (für Header ohne Text)
+export function SpcLogoBrandOnly({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 60 50" width="60" height="50" xmlns="http://www.w3.org/2000/svg" aria-label="SPC" className={className}>
+      <defs>
+        <linearGradient id="crown-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f4c85a" />
+          <stop offset="1" stopColor="#c98b1e" />
+        </linearGradient>
+      </defs>
+      <g transform="translate(30 14)" fill="url(#crown-bg)" stroke="#a06f10" strokeWidth="0.5">
+        <path d="M -14 4 L -10 -8 L -5 2 L 0 -11 L 5 2 L 10 -8 L 14 4 L 14 8 L -14 8 Z" />
+      </g>
+      <text x="30" y="44" fontSize="20" fontWeight="900" fontStyle="italic"
+        fontFamily="'Arial Black', Impact, system-ui" textAnchor="middle"
+        fill="#0a3d5c" letterSpacing="-0.5">SPC</text>
+    </svg>
   );
 }

@@ -1,8 +1,8 @@
 import { requireAuth } from "@/lib/auth";
-import { getActiveCompetition, getLatestCompetition, getLiveRanking, getTopFish, getCurrentCall, getUpcomingCalls, getCompetitionFull } from "@/lib/queries";
+import { getActiveCompetition, getLatestCompetition, getLiveRanking, getCurrentCall, getUpcomingCalls, getCompetitionFull } from "@/lib/queries";
 import { supabaseAdmin } from "@/lib/supabase";
-import { FishPhoto, FishThumb } from "@/components/Icons";
-import { LiveClock, TrendCell } from "./LiveClient";
+import { assignScoredSlots, DEFAULT_SETTINGS } from "@/lib/scoring";
+import { LiveClock } from "./LiveClient";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -14,23 +14,29 @@ export default async function LivePage() {
   const comp = await getActiveCompetition() ?? await getLatestCompetition();
   if (!comp) return <NoComp />;
 
-  const [ranking, topFish, currentCalls, upcomingAll, compFull, { data: allCatches }] = await Promise.all([
+  const [ranking, currentCalls, upcomingAll, compFull, { data: allCatches }, { data: penaltyRows }] = await Promise.all([
     getLiveRanking(comp.id),
-    getTopFish(comp.id),
     getCurrentCall(comp.id),
     getUpcomingCalls(comp.id, 20),
     getCompetitionFull(comp.id),
-    supabaseAdmin.from("catches").select("id, user_id, is_scored, topwater, is_valid").eq("competition_id", comp.id),
+    supabaseAdmin.from("catches").select("*").eq("competition_id", comp.id).order("caught_at", { ascending: false }),
+    supabaseAdmin.from("penalties").select("user_id, penalty_type").eq("competition_id", comp.id),
   ]);
 
-  // Berechne Boni + Strafen pro User für Tabelle
-  const bonusMap = new Map<string, number>();     // Anzahl Topwater-Boni (max 1 pro Rolle in UX-Review)
-  const penaltyMap = new Map<string, number>();   // Anzahl Strafen
+  // Boni + Strafen pro User
+  const hasTW = new Set<string>();          // Topwater-Bonus erhalten
+  const handlingCount = new Map<string, number>();  // H(!) Anzahl
+  const abrissCount   = new Map<string, number>();  // A(!) Anzahl
   for (const c of allCatches ?? []) {
-    if (c.topwater && c.is_valid && c.is_scored) bonusMap.set(c.user_id, 1); // "Nur einmal möglich" laut UX
+    if (c.topwater && c.is_valid && c.is_scored) hasTW.add(c.user_id);
   }
-  const { data: penaltyRows } = await supabaseAdmin.from("penalties").select("user_id").eq("competition_id", comp.id);
-  for (const p of penaltyRows ?? []) penaltyMap.set(p.user_id, (penaltyMap.get(p.user_id) ?? 0) + 1);
+  for (const p of penaltyRows ?? []) {
+    if (p.penalty_type === "handling") handlingCount.set(p.user_id, (handlingCount.get(p.user_id) ?? 0) + 1);
+    if (p.penalty_type === "abriss")   abrissCount.set(p.user_id,   (abrissCount.get(p.user_id) ?? 0) + 1);
+  }
+
+  // Trend: aktuelles Ranking vs. Ranking OHNE letzten gültigen Fang
+  const trendMap = computeTrend(ranking, allCatches ?? []);
 
   const leader = ranking[0];
   const usersById = new Map(compFull.users.map(u => [u.id, u]));
@@ -102,20 +108,6 @@ export default async function LivePage() {
         </section>
       )}
 
-      {/* Top-Fisch dezent */}
-      {topFish && (
-        <div className="bg-white rounded-2xl px-4 py-2.5 shadow-cs-sm mb-3 relative overflow-hidden flex items-center gap-3">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-spc-gold" />
-          <span className="text-[10px] uppercase tracking-widest text-spc-goldDeep font-bold pl-1">Top</span>
-          <FishThumb species={topFish.species} size={32} />
-          <div className="flex-1 min-w-0 text-[13.5px]">
-            <span className="font-bold text-spc-dark">{SPECIES[topFish.species]} {topFish.length_cm} cm</span>
-            <span className="text-ink-3 ml-1.5">· {usersById.get(topFish.user_id)?.nickname ?? usersById.get(topFish.user_id)?.name ?? "—"}</span>
-          </div>
-          <div className="text-[16px] font-bold text-spc-gold num">{topFish.total_points}</div>
-        </div>
-      )}
-
       {/* RANKING-Tabelle mit Bonus/Strafe/Trend */}
       <section className="bg-white rounded-3xl overflow-hidden shadow-cs-sm mb-3">
         <div className="px-5 pt-4 pb-2 grid grid-cols-[42px_1fr_60px_50px_60px_44px] lg:grid-cols-[42px_1fr_74px_54px_74px_50px] gap-3 text-[10px] uppercase tracking-widest font-bold text-ink-3">
@@ -123,11 +115,13 @@ export default async function LivePage() {
         </div>
         {ranking.length === 0 && <div className="p-10 text-center text-ink-3 text-[14px]">Noch keine Teilnehmer angemeldet.</div>}
         {ranking.map((r: any, idx: number) => {
-          const hasBonus = (bonusMap.get(r.user_id) ?? 0) > 0;
-          const penCount = penaltyMap.get(r.user_id) ?? 0;
+          const tw = hasTW.has(r.user_id);
+          const hc = handlingCount.get(r.user_id) ?? 0;
+          const ac = abrissCount.get(r.user_id)   ?? 0;
+          const delta = trendMap.get(r.user_id) ?? 0;
           return (
             <Link key={r.user_id} href={`/spieler/${r.user_id}`}
-              className={`grid grid-cols-[42px_1fr_60px_50px_60px_44px] lg:grid-cols-[42px_1fr_74px_54px_74px_50px] gap-3 items-center px-4 lg:px-5 py-3 border-t border-black/[0.04] hover:bg-spc-greyLight transition ${r.user_id === user.id ? "bg-spc-lighter/60" : ""}`}>
+              className={`grid grid-cols-[42px_1fr_60px_50px_84px_44px] lg:grid-cols-[42px_1fr_74px_54px_100px_50px] gap-3 items-center px-4 lg:px-5 py-3 border-t border-black/[0.04] hover:bg-spc-greyLight transition ${r.user_id === user.id ? "bg-spc-lighter/60" : ""}`}>
               <Medal rank={idx + 1} />
               <div className="min-w-0">
                 <div className={`font-bold text-[15px] truncate ${r.user_id === user.id ? "text-spc-dark" : "text-ink"}`}>
@@ -139,16 +133,13 @@ export default async function LivePage() {
               </div>
               <div className={`text-right text-[20px] font-bold num ${r.user_id === user.id ? "text-spc-mid" : "text-ink"}`}>{r.points ?? 0}</div>
               <div className="text-right text-[12.5px] text-ink-3 num font-semibold">{r.scored_count ?? 0}/6</div>
-              <div className="flex items-center justify-end gap-1">
-                {hasBonus && <span className="inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold">TW</span>}
-                {penCount > 0 && (
-                  <span className="inline-block bg-danger/15 text-danger text-[11px] px-1.5 py-0.5 rounded font-bold leading-none tracking-tight">
-                    {"!".repeat(Math.min(penCount, 3))}
-                  </span>
-                )}
-                {!hasBonus && penCount === 0 && <span className="text-ink-4 text-[12px]">—</span>}
+              <div className="flex flex-wrap items-center justify-end gap-1">
+                {tw   && <BonusChip label="TW"    kind="ok" />}
+                {hc   > 0 && <BonusChip label={hc > 1 ? `H(!) ×${hc}` : "H(!)"} kind="bad" />}
+                {ac   > 0 && <BonusChip label={ac > 1 ? `A(!) ×${ac}` : "A(!)"} kind="bad" />}
+                {!tw && hc === 0 && ac === 0 && <span className="text-ink-4 text-[12px]">—</span>}
               </div>
-              <TrendCell userId={r.user_id} />
+              <TrendArrow delta={delta} />
             </Link>
           );
         })}
@@ -176,6 +167,68 @@ function Medal({ rank }: { rank: number }) {
                   "bg-gradient-to-br from-orange-300 to-orange-500 text-white"];
   const cls = styles[rank] ?? "bg-spc-greyLight text-ink-3";
   return <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[14px] num ${cls}`}>{rank}</div>;
+}
+
+function BonusChip({ label, kind }: { label: string; kind: "ok" | "bad" }) {
+  const cls = kind === "ok"
+    ? "bg-success text-white"
+    : "bg-danger text-white";
+  return <span className={`inline-block ${cls} text-[10px] px-1.5 py-0.5 rounded font-bold leading-none tracking-tight`}>{label}</span>;
+}
+
+function TrendArrow({ delta }: { delta: number }) {
+  if (delta === 0) {
+    return <div className="text-right text-[13px] text-ink-4 num font-semibold">—</div>;
+  }
+  const up = delta > 0;
+  return (
+    <div className={`text-right text-[12px] font-bold num ${up ? "text-success" : "text-danger"} inline-flex items-center justify-end gap-0.5`}>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {up ? <path d="M12 19V5M5 12l7-7 7 7"/> : <path d="M12 5v14M19 12l-7 7-7-7"/>}
+      </svg>
+      {Math.abs(delta)}
+    </div>
+  );
+}
+
+// Trend: aktuelle Rangliste vs. Rangliste OHNE den letzten gültigen Fang.
+// Vergleicht auf Basis der scored-Punkte pro User (Strafen sind statisch → verändern die Reihenfolge nicht).
+function computeTrend(currentRanking: any[], allCatches: any[]): Map<string, number> {
+  const map = new Map<string, number>();
+  const validCatches = (allCatches ?? []).filter((c: any) => c.is_valid);
+  if (validCatches.length === 0) return map;
+
+  const latest = validCatches[0]; // allCatches ist bereits caught_at DESC sortiert
+  const scoredPointsPer = (excludeId: string | null) => {
+    const byUser: Record<string, any[]> = {};
+    for (const c of validCatches) {
+      if (excludeId && c.id === excludeId) continue;
+      (byUser[c.user_id] ||= []).push(c);
+    }
+    const out = new Map<string, number>();
+    for (const uid of Object.keys(byUser)) {
+      const scored = assignScoredSlots(byUser[uid] as any, DEFAULT_SETTINGS);
+      out.set(uid, scored.filter(c => c.is_scored).reduce((s, c) => s + (c.total_points ?? 0), 0));
+    }
+    return out;
+  };
+
+  const curr = scoredPointsPer(null);
+  const prev = scoredPointsPer(latest.id);
+  const users = new Set(currentRanking.map(r => r.user_id));
+  for (const uid of Array.from(prev.keys())) users.add(uid);
+  for (const uid of Array.from(curr.keys())) users.add(uid);
+
+  const currList = Array.from(users).map(uid => ({ uid, p: curr.get(uid) ?? 0 })).sort((a, b) => b.p - a.p);
+  const prevList = Array.from(users).map(uid => ({ uid, p: prev.get(uid) ?? 0 })).sort((a, b) => b.p - a.p);
+  const currRank = new Map(currList.map((r, i) => [r.uid, i]));
+  const prevRank = new Map(prevList.map((r, i) => [r.uid, i]));
+  for (const uid of Array.from(users)) {
+    const c = currRank.get(uid) ?? 0;
+    const p = prevRank.get(uid) ?? c;
+    map.set(uid, p - c); // >0 = nach oben gerückt
+  }
+  return map;
 }
 
 // Ranking-Chart: elegant, Legende separat oben

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Icons } from "./Icons";
-import { SpcLogoCompact } from "./SpcLogo";
+import { SpcLogoCompact, SpcLogoBrandOnly } from "./SpcLogo";
 
 const NAV = [
   { href: "/",           label: "Home",            icon: Icons.home },
@@ -29,16 +29,16 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
   ] : NAV;
   return (
     <>
-      <header className="lg:hidden blur-bar sticky top-0 z-30 border-b border-black/[0.10] flex items-center justify-between px-4 safe-pt pb-3">
-        <button onClick={() => setOpen(true)} aria-label="Menü öffnen" className="w-9 h-9 -ml-2 flex items-center justify-center rounded-lg hover:bg-spc-greyLight">
+      <header className="lg:hidden blur-bar sticky top-0 z-30 border-b border-black/[0.10] grid grid-cols-[44px_1fr_44px] items-center px-3 safe-pt pb-2.5">
+        <button onClick={() => setOpen(true)} aria-label="Menü öffnen" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-spc-greyLight">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-spc-dark">
             <path d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
-        <Link href="/" className="flex items-center gap-2">
-          <SpcLogoCompact />
+        <Link href="/" aria-label="Home" className="flex items-center justify-center">
+          <SpcLogoBrandOnly className="h-9 w-auto" />
         </Link>
-        <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-mid text-white flex items-center justify-center text-[13px] font-bold overflow-hidden">
+        <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-mid text-white flex items-center justify-center text-[13px] font-bold overflow-hidden justify-self-end">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover"/> : initial}
         </Link>
       </header>
