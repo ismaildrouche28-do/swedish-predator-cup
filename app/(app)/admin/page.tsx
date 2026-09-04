@@ -28,6 +28,8 @@ export default async function AdminPage() {
 
   const focusComp = active ?? prep ?? latest;
   const teilnehmer = (users ?? []).filter((u: any) => u.is_active && !u.is_admin);
+  // Phase 2 ist nur sinnvoll, wenn ein Wettkampf läuft oder pausiert ist
+  const controlUrl = focusComp ? `/admin/wettkampf?id=${focusComp.id}` : `/admin/wettkampf`;
 
   return (
     <div>
@@ -40,7 +42,9 @@ export default async function AdminPage() {
           </div>
           <AdminLogoutButton />
         </div>
-        <p className="text-[14px] text-white/80 mt-1 max-w-[56ch]">Profile pflegen, Wettkampf aufbauen und starten, Fänge korrigieren.</p>
+        <p className="text-[14px] text-white/80 mt-1 max-w-[56ch]">
+          Klare Trennung zwischen Wettkampf vorbereiten und laufenden Wettkampf steuern.
+        </p>
       </section>
 
       {/* KPIs */}
@@ -51,35 +55,52 @@ export default async function AdminPage() {
         <KpiCard label="Aktueller Status" value={focusComp ? STATUS_LABEL[focusComp.status] : "—"} success={focusComp?.status === "running"} />
       </div>
 
-      {/* Wettkampf-Aktionen */}
-      <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
-        <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampf</div>
-        <div className="flex items-start justify-between gap-3 flex-wrap mt-1">
-          <div>
-            <div className="text-[19px] font-bold text-spc-dark">{focusComp?.name ?? "Noch kein Wettkampf"}</div>
-            <div className="text-[13px] text-ink-3 mt-0.5">
-              {focusComp
-                ? <><span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest ${STATUS_STYLE[focusComp.status]}`}>{STATUS_LABEL[focusComp.status]}</span> · {focusComp.location ?? "—"}</>
-                : "Leg unten einen an, um Teilnehmer und Boote zu verteilen."}
-            </div>
+      {/* PHASE 1: Wettkampf erstellen und vorbereiten */}
+      <PhaseCard
+        step="Phase 1"
+        title="Wettkampf erstellen und vorbereiten"
+        href="/admin/wettkampf-neu"
+        actionLabel={focusComp?.status === "prep" ? "Vorbereitung fortsetzen" : "Öffnen"}
+        variant="dark"
+        bullets={[
+          "Einen neuen Wettkampf erstellen",
+          "Teilnehmer für den Wettkampf auswählen",
+          "Teilnehmer den Booten A oder B zuweisen",
+          "Calls automatisch oder manuell vergeben",
+          "Wettkampfzeit: Datum, Start, Ende, Pause",
+        ]}
+      />
+
+      {/* PHASE 2: Wettkampf steuern und korrigieren */}
+      <PhaseCard
+        step="Phase 2"
+        title="Wettkampf steuern und korrigieren"
+        href={controlUrl}
+        actionLabel={focusComp ? "Öffnen" : "Erst Wettkampf vorbereiten"}
+        disabled={!focusComp}
+        variant="light"
+        bullets={[
+          "Falsch eingetragene Fänge korrigieren",
+          "Strafen setzen oder korrigieren",
+          "Wettkampf pausieren und fortsetzen",
+          "Pause bei Bedarf verlängern",
+          "Wettkampfkorrekturen während des Spiels",
+        ]}
+      />
+
+      {/* Aktueller Wettkampf im Fokus */}
+      {focusComp && (
+        <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
+          <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Aktueller Wettkampf</div>
+          <div className="flex flex-wrap items-baseline gap-2 mt-1">
+            <div className="text-[19px] font-bold text-spc-dark">{focusComp.name}</div>
+            <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest ${STATUS_STYLE[focusComp.status]}`}>{STATUS_LABEL[focusComp.status]}</span>
+          </div>
+          <div className="text-[13px] text-ink-3 mt-0.5">
+            {focusComp.location ?? "—"} · {focusComp.start_at ? new Date(focusComp.start_at).toLocaleString("de-DE") : "—"}
           </div>
         </div>
-
-        <div className="grid sm:grid-cols-2 gap-2.5 mt-4">
-          <Link href="/admin/wettkampf-neu" className="group bg-spc-dark hover:bg-spc-mid text-white rounded-2xl p-4 transition shadow-cs-sm">
-            <div className="text-[10px] uppercase tracking-widest text-white/70 font-bold">Schritt 1</div>
-            <div className="text-[16px] font-bold mt-0.5">Wettkampf aufbauen & starten</div>
-            <p className="text-[12.5px] text-white/80 mt-1">Anlegen, Teilnehmer auf Boote verteilen, Calls automatisch generieren, dann starten.</p>
-            <span className="inline-block mt-2 text-[13px] font-semibold">Öffnen →</span>
-          </Link>
-          <Link href="/admin/wettkampf" className="group bg-spc-lighter hover:bg-spc-lighter/70 text-spc-dark rounded-2xl p-4 transition shadow-cs-sm">
-            <div className="text-[10px] uppercase tracking-widest text-spc-mid font-bold">Während des Cups</div>
-            <div className="text-[16px] font-bold mt-0.5">Wettkampf steuern & Fänge korrigieren</div>
-            <p className="text-[12.5px] text-ink-2 mt-1">Wettkampfuhr starten / pausieren / beenden, einzelne Fänge editieren oder löschen.</p>
-            <span className="inline-block mt-2 text-[13px] font-semibold text-spc-mid">Öffnen →</span>
-          </Link>
-        </div>
-      </div>
+      )}
 
       {/* Profile-Verwaltung */}
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
@@ -110,7 +131,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Alle Wettkämpfe */}
+      {/* Archiv */}
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
         <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Archiv</div>
         <div className="text-[19px] font-bold text-spc-dark">Alle Wettkämpfe</div>
@@ -130,11 +151,44 @@ export default async function AdminPage() {
           ))}
           {(comps ?? []).length === 0 && (
             <div className="text-[13.5px] text-ink-3 italic py-3">
-              Noch keine Wettkämpfe. Leg oben unter <Link href="/admin/wettkampf-neu" className="text-spc-mid font-semibold hover:underline">„Wettkampf aufbauen & starten"</Link> einen an.
+              Noch keine Wettkämpfe. Fang in <Link href="/admin/wettkampf-neu" className="text-spc-mid font-semibold hover:underline">Phase 1</Link> an.
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PhaseCard({ step, title, href, actionLabel, bullets, variant, disabled }: {
+  step: string; title: string; href: string; actionLabel: string;
+  bullets: string[]; variant: "dark" | "light"; disabled?: boolean;
+}) {
+  const wrapper = variant === "dark"
+    ? "bg-spc-dark text-white"
+    : "bg-white text-spc-dark border border-black/[0.06]";
+  const kicker = variant === "dark" ? "text-white/70" : "text-spc-mid";
+  const body   = variant === "dark" ? "text-white/85" : "text-ink-2";
+  const bulletColor = variant === "dark" ? "text-white/90 marker:text-spc-gold" : "text-ink marker:text-spc-mid";
+  const buttonCls = disabled
+    ? "bg-white/10 text-white/60 cursor-not-allowed"
+    : variant === "dark"
+      ? "bg-white text-spc-dark hover:bg-white/90"
+      : "bg-spc-dark text-white hover:bg-spc-mid";
+  return (
+    <div className={`rounded-3xl p-5 sm:p-6 shadow-cs-sm mb-3 ${wrapper}`}>
+      <div className={`text-[11px] uppercase tracking-widest font-bold ${kicker}`}>{step}</div>
+      <h2 className="text-[20px] sm:text-[22px] font-bold mt-0.5 tracking-tight">{title}</h2>
+      <ul className={`list-disc pl-5 mt-3 space-y-1 text-[13.5px] ${bulletColor} ${body}`}>
+        {bullets.map(b => <li key={b}>{b}</li>)}
+      </ul>
+      {disabled ? (
+        <span className={`inline-block mt-4 px-4 py-2.5 rounded-xl font-bold text-[13.5px] ${buttonCls}`}>{actionLabel}</span>
+      ) : (
+        <Link href={href} className={`inline-block mt-4 px-4 py-2.5 rounded-xl font-bold text-[13.5px] transition ${buttonCls}`}>
+          {actionLabel} →
+        </Link>
+      )}
     </div>
   );
 }

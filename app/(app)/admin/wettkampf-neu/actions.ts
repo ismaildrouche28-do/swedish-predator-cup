@@ -11,11 +11,13 @@ export async function createCompetition(formData: FormData) {
   const location = String(formData.get("location") ?? "").trim() || null;
   const start_at = String(formData.get("start_at") ?? "") || null;
   const end_at = String(formData.get("end_at") ?? "") || null;
+  const pause_start = String(formData.get("pause_start") ?? "") || null;
+  const pause_end   = String(formData.get("pause_end") ?? "") || null;
   if (!name) return { error: "Name ist Pflicht" };
 
   const { data: comp, error } = await supabaseAdmin
     .from("competitions")
-    .insert({ name, location, start_at, end_at, status: "prep", created_by: user.id })
+    .insert({ name, location, start_at, end_at, pause_start, pause_end, status: "prep", created_by: user.id })
     .select().single();
   if (error || !comp) return { error: error?.message ?? "Fehler beim Anlegen" };
 
@@ -116,4 +118,22 @@ export async function finishCompetition(competitionId: string) {
   await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
   revalidatePath("/", "layout");
   redirect("/");
+}
+
+// Grunddaten + Wettkampfzeit während Vorbereitung/Lauf aktualisieren
+export async function updateWettkampfzeit(competitionId: string, formData: FormData) {
+  requireAdmin();
+  const name = String(formData.get("name") ?? "").trim();
+  const location = String(formData.get("location") ?? "").trim() || null;
+  const start_at = String(formData.get("start_at") ?? "") || null;
+  const end_at   = String(formData.get("end_at") ?? "") || null;
+  const pause_start = String(formData.get("pause_start") ?? "") || null;
+  const pause_end   = String(formData.get("pause_end") ?? "") || null;
+  if (!name) return { error: "Name ist Pflicht" };
+  const { error } = await supabaseAdmin.from("competitions")
+    .update({ name, location, start_at, end_at, pause_start, pause_end, updated_at: new Date().toISOString() })
+    .eq("id", competitionId);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

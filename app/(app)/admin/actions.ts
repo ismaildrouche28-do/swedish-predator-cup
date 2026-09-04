@@ -181,3 +181,34 @@ export async function finishCompetitionAdmin(competitionId: string) {
   await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
   revalidatePath("/", "layout");
 }
+
+// Strafe manuell setzen
+export async function createPenaltyAsAdmin(competitionId: string, formData: FormData) {
+  requireAdmin();
+  const user_id = String(formData.get("user_id") ?? "");
+  const penalty_type = String(formData.get("penalty_type") ?? "") as "abriss" | "handling";
+  const note = String(formData.get("note") ?? "").trim() || null;
+  if (!user_id) return { error: "Teilnehmer fehlt" };
+  if (!["abriss", "handling"].includes(penalty_type)) return { error: "Ungültiger Strafentyp" };
+  const points = penalty_type === "abriss" ? 20 : 0;
+  const ban_until = penalty_type === "handling" ? new Date(Date.now() + 10 * 60 * 1000).toISOString() : null;
+  const { error } = await supabaseAdmin.from("penalties").insert({
+    competition_id: competitionId, user_id, penalty_type, points, ban_until, note,
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+// Pause verlängern (bzw. Pausen-Ende neu setzen)
+export async function extendPauseAsAdmin(competitionId: string, formData: FormData) {
+  requireAdmin();
+  const pause_end = String(formData.get("pause_end") ?? "") || null;
+  if (!pause_end) return { error: "Neues Pausen-Ende fehlt" };
+  const { error } = await supabaseAdmin.from("competitions")
+    .update({ pause_end, updated_at: new Date().toISOString() })
+    .eq("id", competitionId);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

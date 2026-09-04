@@ -26,9 +26,7 @@ export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; av
   const path = usePathname();
   const nav = isAdmin
     ? [...NAV_BASE, { section: "Admin", items: [
-        { href: "/admin",           label: "Übersicht",         icon: Icons.trophyFilled },
-        { href: "/admin/wettkampf-neu", label: "Wettkampf aufbauen", icon: Icons.settings },
-        { href: "/admin/wettkampf", label: "Wettkampf steuern", icon: Icons.live },
+        { href: "/admin", label: "Admin", icon: Icons.trophyFilled },
       ]}]
     : NAV_BASE;
   return (

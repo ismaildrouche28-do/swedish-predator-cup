@@ -1,6 +1,13 @@
 "use client";
 import { useTransition, useState } from "react";
-import { createCompetition, addParticipantById, removeParticipant, startCompetition, finishCompetition, autoGenerateCalls } from "./actions";
+import { createCompetition, addParticipantById, removeParticipant, startCompetition, finishCompetition, autoGenerateCalls, updateWettkampfzeit } from "./actions";
+
+function toLocalInput(v: string | null | undefined): string {
+  if (!v) return "";
+  const d = new Date(v);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export function CreateForm() {
   const [pending, start] = useTransition();
@@ -11,6 +18,8 @@ export function CreateForm() {
         className="w-full px-4 py-3 rounded-xl bg-spc-greyLight focus:bg-white outline-none text-[15px] border border-transparent focus:border-spc-mid" />
       <input name="location" placeholder="Ort"
         className="w-full px-4 py-3 rounded-xl bg-spc-greyLight focus:bg-white outline-none text-[15px] border border-transparent focus:border-spc-mid" />
+
+      <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold pt-1">Wettkampfzeit</div>
       <div className="grid grid-cols-2 gap-2">
         <label className="block bg-spc-greyLight rounded-xl p-3">
           <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Angelstart</span>
@@ -20,10 +29,70 @@ export function CreateForm() {
           <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Angelende</span>
           <input type="datetime-local" name="end_at" className="w-full bg-transparent outline-none text-[14px]" />
         </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Pause ab</span>
+          <input type="datetime-local" name="pause_start" className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Pause bis</span>
+          <input type="datetime-local" name="pause_end" className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
       </div>
+      <p className="text-[11.5px] text-ink-3 leading-snug">Beispiel: 10:00–19:00 mit Pause 14:00–15:00.</p>
+
       <button disabled={pending} className="w-full py-3.5 rounded-2xl bg-spc-dark text-white font-bold disabled:opacity-50 hover:bg-spc-mid transition">
         {pending ? "Lege an…" : "Wettkampf anlegen"}
       </button>
+    </form>
+  );
+}
+
+// Zeit-Editor: bearbeitet Grunddaten + Wettkampfzeit eines bestehenden Wettkampfs
+export function WettkampfzeitForm({ comp }: { comp: any }) {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<{ t: "ok" | "err"; m: string } | null>(null);
+  return (
+    <form action={(fd) => start(async () => {
+      setMsg(null);
+      const r = await updateWettkampfzeit(comp.id, fd);
+      if (r?.error) setMsg({ t: "err", m: r.error });
+      else setMsg({ t: "ok", m: "Wettkampfzeit gespeichert." });
+    })} className="bg-white rounded-3xl p-5 shadow-cs-sm space-y-3">
+      <div>
+        <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampfzeit</div>
+        <div className="text-[16px] font-bold text-spc-dark">Datum, Zeitfenster und Pause</div>
+        <p className="text-[12.5px] text-ink-3 mt-0.5">Beispiel: 10:00–19:00 Uhr, Pause 14:00–15:00 Uhr. Pause kann später verlängert werden.</p>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Name</span>
+          <input name="name" required defaultValue={comp.name ?? ""} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Ort</span>
+          <input name="location" defaultValue={comp.location ?? ""} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Angelstart</span>
+          <input type="datetime-local" name="start_at" defaultValue={toLocalInput(comp.start_at)} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Angelende</span>
+          <input type="datetime-local" name="end_at" defaultValue={toLocalInput(comp.end_at)} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Pause ab</span>
+          <input type="datetime-local" name="pause_start" defaultValue={toLocalInput(comp.pause_start)} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+        <label className="block bg-spc-greyLight rounded-xl p-3">
+          <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Pause bis</span>
+          <input type="datetime-local" name="pause_end" defaultValue={toLocalInput(comp.pause_end)} className="w-full bg-transparent outline-none text-[14px]" />
+        </label>
+      </div>
+      <button disabled={pending} className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-spc-dark text-white font-bold disabled:opacity-50 hover:bg-spc-mid transition">
+        {pending ? "Speichere…" : "Wettkampfzeit speichern"}
+      </button>
+      {msg && <div className={`text-[13px] rounded-xl p-3 ${msg.t === "err" ? "bg-danger/10 text-danger" : "bg-success/10 text-success-dark font-semibold"}`}>{msg.m}</div>}
     </form>
   );
 }

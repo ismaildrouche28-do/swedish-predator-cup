@@ -21,12 +21,9 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
   const [open, setOpen] = useState(false);
   const path = usePathname();
   const initial = (nickname ?? "?").slice(0, 1).toUpperCase();
-  const nav = isAdmin ? [
-    ...NAV,
-    { href: "/admin",              label: "Admin · Übersicht",     icon: Icons.trophyFilled },
-    { href: "/admin/wettkampf-neu",label: "Admin · Wettkampf aufbauen", icon: Icons.settings },
-    { href: "/admin/wettkampf",    label: "Admin · Wettkampf steuern",  icon: Icons.live },
-  ] : NAV;
+  const nav = isAdmin
+    ? [...NAV, { href: "/admin", label: "Admin", icon: Icons.trophyFilled }]
+    : NAV;
   return (
     <>
       <header className="lg:hidden sticky top-0 z-30 bg-spc-dark text-white grid grid-cols-[44px_1fr_44px] items-center px-3 safe-pt pb-2.5 shadow-cs">

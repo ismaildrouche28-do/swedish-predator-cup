@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
-import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton } from "./SetupForm";
+import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton, WettkampfzeitForm } from "./SetupForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -47,15 +47,8 @@ export default async function SetupPage() {
         </p>
       </section>
 
-      <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
-        <div className="text-[16px] font-bold text-spc-dark mb-1">Grunddaten</div>
-        <p className="text-[13px] text-ink-3 mb-3">Name, Ort und Zeitrahmen</p>
-        <div className="grid sm:grid-cols-2 gap-2 text-[14px]">
-          <Field label="Name">{comp.name}</Field>
-          <Field label="Ort">{comp.location ?? "—"}</Field>
-          <Field label="Start">{comp.start_at ? new Date(comp.start_at).toLocaleString("de-DE") : "—"}</Field>
-          <Field label="Ende">{comp.end_at ? new Date(comp.end_at).toLocaleString("de-DE") : "—"}</Field>
-        </div>
+      <div className="mb-3">
+        <WettkampfzeitForm comp={comp} />
       </div>
 
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
