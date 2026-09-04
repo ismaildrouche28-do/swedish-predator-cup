@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
-import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton, WettkampfzeitForm } from "./SetupForm";
+import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow } from "./SetupForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +34,8 @@ export default async function SetupPage() {
     if (u) membersByBoat.get(m.boat_id)?.push(u);
   }
 
-  const statusLabel = { prep: "Vorbereitung", running: "läuft", paused: "pausiert", finished: "beendet" }[comp.status];
+  const STATUS_LABEL: Record<string, string> = { prep: "Vorbereitung", running: "läuft", paused: "pausiert", finished: "beendet" };
+  const statusLabel = STATUS_LABEL[comp.status] ?? comp.status;
   const canStart = comp.status === "prep" && members.length >= 2;
 
   return (
@@ -99,29 +100,40 @@ export default async function SetupPage() {
           <div className="text-[16px] font-bold text-spc-dark mb-1">Call-Planung</div>
           <p className="text-[13px] text-ink-3 mb-3">
             {calls.length > 0
-              ? `${calls.length} Call-Zeitfenster verteilt · jedes Boot gleichmäßig aufgeteilt.`
-              : "Noch keine Calls definiert. Klick den Button für automatische Verteilung — jeder Bootsmember bekommt ein gleich langes Zeitfenster zwischen Start und Ende."}
+              ? `${calls.length} Call-Zeitfenster · verteilt auf ${boats.length} Boote · respektiert Wettkampfzeit und Pause.`
+              : "Noch keine Calls. Automatisch verteilen — die Calls orientieren sich an der eingestellten Wettkampfzeit und lassen die Pause aus."}
           </p>
-          {calls.length > 0 && (
-            <div className="space-y-1.5">
-              {calls.map((c: any) => {
-                const u = users.find(u => u.id === c.user_id);
-                const boat = boats.find(b => b.id === c.boat_id);
-                return (
-                  <div key={c.id} className="grid grid-cols-[110px_1fr_auto] gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2 text-[13px]">
-                    <div className="num font-semibold text-spc-dark">
-                      {new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–{new Date(c.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                    <div>
-                      <strong className="font-semibold text-[14px]">{u?.nickname ?? u?.name ?? "?"}</strong>
-                      <span className="ml-1.5 text-[11.5px] text-ink-3">{({morning:"Morning",mid:"Mid",late:"Late"} as any)[c.call_type]}</span>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-spc-lighter text-spc-dark uppercase tracking-wider">{boat?.label?.split(" ").pop()}</span>
+
+          {/* Calls pro Boot */}
+          {boats.map(b => {
+            const boatParticipants = members
+              .filter(m => m.boat_id === b.id)
+              .map(m => {
+                const u = users.find(u => u.id === m.user_id);
+                return { id: m.user_id, label: u?.nickname ?? u?.name ?? "?", boat_id: b.id };
+              });
+            const allParticipants = members.map(m => {
+              const u = users.find(u => u.id === m.user_id);
+              return { id: m.user_id, label: u?.nickname ?? u?.name ?? "?", boat_id: m.boat_id };
+            });
+            const boatCalls = calls.filter((c: any) => c.boat_id === b.id).sort((a: any, b: any) => +new Date(a.start_at) - +new Date(b.start_at));
+            return (
+              <div key={b.id} className="mb-4">
+                <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold mb-1.5">{b.label}</div>
+                {boatCalls.length === 0 ? (
+                  <div className="text-[12.5px] text-ink-3 italic mb-2">Noch keine Calls für dieses Boot.</div>
+                ) : (
+                  <div className="space-y-1.5 mb-2">
+                    {boatCalls.map((c: any) => <CallRow key={c.id} call={c} participants={allParticipants} />)}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
+                {boatParticipants.length > 0 && (comp.status === "prep" || comp.status === "running") && (
+                  <ManualCallForm competitionId={comp.id} boats={[b]} participants={boatParticipants} />
+                )}
+              </div>
+            );
+          })}
+
           {(comp.status === "prep" || comp.status === "running") && (
             <GenerateCallsButton competitionId={comp.id} hasCalls={calls.length > 0} />
           )}

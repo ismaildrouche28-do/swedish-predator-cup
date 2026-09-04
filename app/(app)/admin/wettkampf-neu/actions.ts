@@ -1,8 +1,11 @@
 "use server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, requireProfile } from "@/lib/auth";
+import { generateCallsForCompetitionShared } from "@/lib/calls";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+const generateCallsForCompetition = generateCallsForCompetitionShared;
 
 export async function createCompetition(formData: FormData) {
   requireAdmin();
@@ -14,12 +17,22 @@ export async function createCompetition(formData: FormData) {
   const pause_start = String(formData.get("pause_start") ?? "") || null;
   const pause_end   = String(formData.get("pause_end") ?? "") || null;
   if (!name) return { error: "Name ist Pflicht" };
+  if (!start_at || !end_at) return { error: "Angelstart und Angelende sind Pflicht" };
+  if (new Date(end_at) <= new Date(start_at)) return { error: "Angelende muss nach Angelstart liegen" };
+  if (pause_start && pause_end && new Date(pause_end) <= new Date(pause_start)) {
+    return { error: "Pausenende muss nach Pausenbeginn liegen" };
+  }
 
-  const { data: comp, error } = await supabaseAdmin
-    .from("competitions")
-    .insert({ name, location, start_at, end_at, pause_start, pause_end, status: "prep", created_by: user.id })
-    .select().single();
-  if (error || !comp) return { error: error?.message ?? "Fehler beim Anlegen" };
+  // Erst mit Pause-Spalten versuchen, sonst ohne (falls Migration noch nicht eingespielt)
+  const basePayload: any = { name, location, start_at, end_at, status: "prep", created_by: user.id };
+  const withPause = { ...basePayload, pause_start, pause_end };
+  let ins = await supabaseAdmin.from("competitions").insert(withPause).select().single();
+  if (ins.error && /pause_(start|end)/i.test(ins.error.message)) {
+    // Fallback: Spalten fehlen noch → ohne Pause anlegen
+    ins = await supabaseAdmin.from("competitions").insert(basePayload).select().single();
+  }
+  if (ins.error || !ins.data) return { error: ins.error?.message ?? "Fehler beim Anlegen" };
+  const comp = ins.data;
 
   await supabaseAdmin.from("competition_settings").insert({ competition_id: comp.id });
   await supabaseAdmin.from("boats").insert([
@@ -55,45 +68,50 @@ export async function removeParticipant(boatId: string, userId: string) {
   revalidatePath("/admin/wettkampf-neu");
 }
 
-async function generateCallsForCompetition(competitionId: string) {
-  const { data: comp } = await supabaseAdmin.from("competitions").select("start_at, end_at").eq("id", competitionId).maybeSingle();
-  if (!comp?.start_at || !comp?.end_at) return { error: "Wettkampf braucht Start- und Endzeit" };
 
-  await supabaseAdmin.from("calls").delete().eq("competition_id", competitionId);
+// Einzelnen Call anlegen (manuell)
+export async function createCallManual(competitionId: string, formData: FormData) {
+  requireAdmin();
+  const boat_id = String(formData.get("boat_id") ?? "");
+  const user_id = String(formData.get("user_id") ?? "");
+  const start_at = String(formData.get("start_at") ?? "");
+  const end_at   = String(formData.get("end_at") ?? "");
+  const call_type = String(formData.get("call_type") ?? "mid");
+  if (!boat_id || !user_id || !start_at || !end_at) return { error: "Alle Felder sind Pflicht" };
+  if (new Date(end_at) <= new Date(start_at)) return { error: "Ende muss nach Start liegen" };
+  const { error } = await supabaseAdmin.from("calls").insert({
+    competition_id: competitionId, boat_id, user_id,
+    call_type, start_at: new Date(start_at).toISOString(), end_at: new Date(end_at).toISOString(),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
 
-  const { data: boats } = await supabaseAdmin.from("boats").select("id, label, sort_order").eq("competition_id", competitionId).order("sort_order");
-  if (!boats) return { error: "Keine Boote" };
+// Call bearbeiten
+export async function updateCallManual(callId: string, formData: FormData) {
+  requireAdmin();
+  const user_id = String(formData.get("user_id") ?? "");
+  const start_at = String(formData.get("start_at") ?? "");
+  const end_at   = String(formData.get("end_at") ?? "");
+  const call_type = String(formData.get("call_type") ?? "");
+  if (!user_id || !start_at || !end_at || !call_type) return { error: "Alle Felder sind Pflicht" };
+  if (new Date(end_at) <= new Date(start_at)) return { error: "Ende muss nach Start liegen" };
+  const { error } = await supabaseAdmin.from("calls").update({
+    user_id, call_type, start_at: new Date(start_at).toISOString(), end_at: new Date(end_at).toISOString(),
+  }).eq("id", callId);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
 
-  const start = new Date(comp.start_at).getTime();
-  const end = new Date(comp.end_at).getTime();
-  if (end <= start) return { error: "Ende muss nach Start liegen" };
-
-  const rows: any[] = [];
-  for (const b of boats) {
-    const { data: members } = await supabaseAdmin.from("boat_members").select("user_id").eq("boat_id", b.id);
-    if (!members || members.length === 0) continue;
-
-    const chunk = (end - start) / members.length;
-    for (let i = 0; i < members.length; i++) {
-      const callStart = new Date(start + chunk * i).toISOString();
-      const callEnd = new Date(start + chunk * (i + 1)).toISOString();
-      const callType = members.length === 1 ? "morning" : i === 0 ? "morning" : i === members.length - 1 ? "late" : "mid";
-      rows.push({
-        competition_id: competitionId,
-        boat_id: b.id,
-        user_id: members[i].user_id,
-        call_type: callType,
-        start_at: callStart,
-        end_at: callEnd,
-      });
-    }
-  }
-
-  if (rows.length > 0) {
-    const { error } = await supabaseAdmin.from("calls").insert(rows);
-    if (error) return { error: error.message };
-  }
-  return { count: rows.length };
+// Call löschen
+export async function deleteCallManual(callId: string) {
+  requireAdmin();
+  const { error } = await supabaseAdmin.from("calls").delete().eq("id", callId);
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 export async function autoGenerateCalls(competitionId: string) {
@@ -130,10 +148,18 @@ export async function updateWettkampfzeit(competitionId: string, formData: FormD
   const pause_start = String(formData.get("pause_start") ?? "") || null;
   const pause_end   = String(formData.get("pause_end") ?? "") || null;
   if (!name) return { error: "Name ist Pflicht" };
-  const { error } = await supabaseAdmin.from("competitions")
-    .update({ name, location, start_at, end_at, pause_start, pause_end, updated_at: new Date().toISOString() })
-    .eq("id", competitionId);
-  if (error) return { error: error.message };
+  if (!start_at || !end_at) return { error: "Angelstart und Angelende sind Pflicht" };
+  if (new Date(end_at) <= new Date(start_at)) return { error: "Angelende muss nach Angelstart liegen" };
+  if (pause_start && pause_end && new Date(pause_end) <= new Date(pause_start)) {
+    return { error: "Pausenende muss nach Pausenbeginn liegen" };
+  }
+  const base: any = { name, location, start_at, end_at, updated_at: new Date().toISOString() };
+  const withPause = { ...base, pause_start, pause_end };
+  let res = await supabaseAdmin.from("competitions").update(withPause).eq("id", competitionId);
+  if (res.error && /pause_(start|end)/i.test(res.error.message)) {
+    res = await supabaseAdmin.from("competitions").update(base).eq("id", competitionId);
+  }
+  if (res.error) return { error: res.error.message };
   revalidatePath("/", "layout");
   return { ok: true };
 }

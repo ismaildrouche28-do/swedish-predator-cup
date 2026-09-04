@@ -40,7 +40,7 @@ export async function getCompetitionFull(competitionId: string) {
     supabaseAdmin.from("boats").select("*").eq("competition_id", competitionId).order("sort_order"),
     supabaseAdmin.from("boat_members").select("*, boats!inner(competition_id)").eq("boats.competition_id", competitionId),
     supabaseAdmin.from("calls").select("*").eq("competition_id", competitionId).order("start_at"),
-    supabaseAdmin.from("users").select("id, name, nickname, avatar_url").eq("is_active", true),
+    supabaseAdmin.from("users").select("id, name, nickname, avatar_url, is_admin").eq("is_active", true),
   ]);
   return { comp, settings, boats: boats ?? [], members: members ?? [], calls: calls ?? [], users: users ?? [] };
 }

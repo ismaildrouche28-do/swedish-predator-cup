@@ -1,6 +1,7 @@
 "use server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin } from "@/lib/auth";
+import { generateCallsForCompetitionShared } from "@/lib/calls";
 import { revalidatePath } from "next/cache";
 
 export async function createProfile(formData: FormData) {
@@ -137,28 +138,10 @@ export async function deletePenaltyAsAdmin(penaltyId: string) {
 // Wettkampf-Steuerung: Start / Pause / Fortsetzen / Beenden
 export async function startCompetitionAdmin(competitionId: string) {
   requireAdmin();
-  // Auto-Generate Calls falls noch keine
+  // Auto-Generate Calls falls noch keine (pause-aware, respektiert die im Wettkampf gesetzte Zeit)
   const { count } = await supabaseAdmin.from("calls").select("id", { count: "exact", head: true }).eq("competition_id", competitionId);
   if (!count || count === 0) {
-    const { data: comp } = await supabaseAdmin.from("competitions").select("start_at, end_at").eq("id", competitionId).maybeSingle();
-    if (comp?.start_at && comp?.end_at) {
-      const start = new Date(comp.start_at).getTime();
-      const end = new Date(comp.end_at).getTime();
-      const { data: boats } = await supabaseAdmin.from("boats").select("id, sort_order").eq("competition_id", competitionId).order("sort_order");
-      const rows: any[] = [];
-      for (const b of boats ?? []) {
-        const { data: members } = await supabaseAdmin.from("boat_members").select("user_id").eq("boat_id", b.id);
-        if (!members?.length) continue;
-        const chunk = (end - start) / members.length;
-        for (let i = 0; i < members.length; i++) {
-          const cs = new Date(start + chunk * i).toISOString();
-          const ce = new Date(start + chunk * (i + 1)).toISOString();
-          const ct = members.length === 1 ? "morning" : i === 0 ? "morning" : i === members.length - 1 ? "late" : "mid";
-          rows.push({ competition_id: competitionId, boat_id: b.id, user_id: members[i].user_id, call_type: ct, start_at: cs, end_at: ce });
-        }
-      }
-      if (rows.length) await supabaseAdmin.from("calls").insert(rows);
-    }
+    await generateCallsForCompetitionShared(competitionId);
   }
   await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
   revalidatePath("/", "layout");
