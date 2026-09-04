@@ -32,31 +32,33 @@ export function Sidebar({ nickname, avatarUrl, isAdmin }: { nickname: string; av
       ]}]
     : NAV_BASE;
   return (
-    <aside className="hidden lg:flex flex-col bg-white w-[240px] shrink-0 sticky top-0 h-screen overflow-y-auto py-6 px-3 border-r border-black/[0.06]">
-      <Link href="/" className="px-3 pb-5 mb-2 border-b border-black/[0.06] block">
-        <SpcLogoCompact />
+    <aside className="hidden lg:flex flex-col bg-white w-[240px] shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-black/[0.06]">
+      <Link href="/" aria-label="Home" className="bg-spc-dark flex items-center justify-center py-6 mb-2 shadow-sm">
+        <img src="/spc-logo.png" alt="Swedish Predator Cup" className="h-14 w-auto select-none" />
       </Link>
 
-      {nav.map(section => (
-        <div key={section.section} className="mb-1">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 px-3 pt-4 pb-1.5">{section.section}</div>
-          {section.items.map(item => {
-            const Icon = item.icon;
-            const active = path === item.href || (item.href !== "/" && path.startsWith(item.href));
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[14.5px] font-medium transition-colors ${
-                  active ? "bg-spc-lighter text-spc-dark" : "text-ink hover:bg-spc-greyLight"
-                }`}>
-                <Icon className={`w-5 h-5 ${active ? "text-spc-mid" : "text-ink-3"}`} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      ))}
+      <div className="px-3">
+        {nav.map(section => (
+          <div key={section.section} className="mb-1">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-ink-3 px-3 pt-4 pb-1.5">{section.section}</div>
+            {section.items.map(item => {
+              const Icon = item.icon;
+              const active = path === item.href || (item.href !== "/" && path.startsWith(item.href));
+              return (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[14.5px] font-medium transition-colors ${
+                    active ? "bg-spc-lighter text-spc-dark" : "text-ink hover:bg-spc-greyLight"
+                  }`}>
+                  <Icon className={`w-5 h-5 ${active ? "text-spc-mid" : "text-ink-3"}`} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </div>
 
-      <div className="mt-auto pt-4 border-t border-black/[0.06] px-3 flex items-center gap-2.5">
+      <div className="mt-auto pt-4 pb-4 border-t border-black/[0.06] px-4 flex items-center gap-2.5">
         <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-lighter overflow-hidden flex items-center justify-center flex-shrink-0">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> :
             <span className="text-[13px] font-bold text-spc-mid">{nickname.slice(0,1).toUpperCase()}</span>}

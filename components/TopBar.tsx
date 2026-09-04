@@ -29,16 +29,16 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
   ] : NAV;
   return (
     <>
-      <header className="lg:hidden blur-bar sticky top-0 z-30 border-b border-black/[0.10] grid grid-cols-[44px_1fr_44px] items-center px-3 safe-pt pb-2.5">
-        <button onClick={() => setOpen(true)} aria-label="Menü öffnen" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-spc-greyLight">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-spc-dark">
+      <header className="lg:hidden sticky top-0 z-30 bg-spc-dark text-white grid grid-cols-[44px_1fr_44px] items-center px-3 safe-pt pb-2.5 shadow-cs">
+        <button onClick={() => setOpen(true)} aria-label="Menü öffnen" className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-white">
             <path d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
         <Link href="/" aria-label="Home" className="flex items-center justify-center">
-          <SpcLogoBrandOnly className="h-9 w-auto" />
+          <SpcLogoBrandOnly className="h-11 w-auto" />
         </Link>
-        <Link href="/profil" className="w-9 h-9 rounded-full bg-spc-mid text-white flex items-center justify-center text-[13px] font-bold overflow-hidden justify-self-end">
+        <Link href="/profil" className="w-9 h-9 rounded-full bg-white/15 text-white ring-1 ring-white/25 flex items-center justify-center text-[13px] font-bold overflow-hidden justify-self-end">
           {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover"/> : initial}
         </Link>
       </header>
@@ -47,10 +47,11 @@ export function TopBar({ nickname, avatarUrl, isAdmin }: { nickname: string; ava
       {open && (
         <>
           <div onClick={() => setOpen(false)} className="lg:hidden fixed inset-0 bg-black/40 z-40" />
-          <aside className="lg:hidden fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto safe-pt">
-            <div className="px-4 pb-4 border-b border-black/[0.06] flex items-center justify-between">
-              <SpcLogoCompact />
-              <button onClick={() => setOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-spc-greyLight text-ink-3 text-[20px]">×</button>
+          <aside className="lg:hidden fixed top-0 left-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl overflow-y-auto">
+            <div className="bg-spc-dark safe-pt px-4 pb-4 flex items-center justify-between">
+              <img src="/spc-logo.png" alt="Swedish Predator Cup" className="h-10 w-auto select-none" />
+              <button onClick={() => setOpen(false)} aria-label="Menü schließen"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-white text-[22px] leading-none transition">×</button>
             </div>
             <nav className="p-2">
               {nav.map(item => {
