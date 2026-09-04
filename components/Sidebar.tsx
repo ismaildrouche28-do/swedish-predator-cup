@@ -17,6 +17,7 @@ const NAV_BASE = [
     { href: "/stats",      label: "Meine Statistik", icon: Icons.stats },
   ]},
   { section: "Konto", items: [
+    { href: "/regelwerk",  label: "Regeln",          icon: Icons.book },
     { href: "/profil",     label: "Mein Profil",     icon: Icons.user },
   ]},
 ];

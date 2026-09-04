@@ -13,6 +13,7 @@ const NAV = [
   { href: "/historie",   label: "Historie",        icon: Icons.history },
   { href: "/hof",        label: "Hall of Fame",    icon: Icons.trophy },
   { href: "/stats",      label: "Meine Statistik", icon: Icons.stats },
+  { href: "/regelwerk",  label: "Regeln",          icon: Icons.book },
   { href: "/profil",     label: "Mein Profil",     icon: Icons.user },
 ];
 

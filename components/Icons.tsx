@@ -14,6 +14,7 @@ export const Icons = {
   trophyFilled: (p: any) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h12v4a6 6 0 01-12 0V4zm4 10h4v6h-4v-6zm-3 6h10a1 1 0 010 2H7a1 1 0 010-2z" opacity="0.9"/></svg>,
   fishFilled: (p: any) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M2 12c4-5 10-5 14 0 0 0-5 5-14 0zm18 3a3 3 0 01-3-3 3 3 0 013-3v6zM11 9a1 1 0 100 2 1 1 0 000-2z" opacity="0.9"/></svg>,
   back: (p: any) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6"/></svg>,
+  book: (p: any) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2V5z"/><path d="M4 5a2 2 0 002 2h13"/></svg>,
 };
 
 export function FishSvg({ species = "pike", className = "" }: { species?: "perch" | "zander" | "pike"; className?: string }) {
