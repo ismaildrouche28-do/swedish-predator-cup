@@ -51,7 +51,16 @@ export default async function Dashboard() {
       </div>
 
       {/* Wettkampfuhr */}
-      {comp.start_at && comp.end_at && <HomeClockCard startAt={comp.start_at} endAt={comp.end_at} />}
+      {comp.start_at && comp.end_at && (
+        <HomeClockCard
+          startAt={comp.start_at}
+          endAt={comp.end_at}
+          status={comp.status}
+          pauseStart={comp.pause_start}
+          pauseEnd={comp.pause_end}
+          updatedAt={comp.updated_at}
+        />
+      )}
 
       {/* Aktueller Call mit Fortschrittsbalken */}
       {displayCall && <CallCard call={displayCall} isMine={!!myCall} />}

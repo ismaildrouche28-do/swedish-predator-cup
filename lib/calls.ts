@@ -1,17 +1,49 @@
 import { supabaseAdmin } from "./supabase";
 
-// Effektive Zeit (ohne Pause) auf Wanduhr-Zeit mappen.
-export function effToWall(effOffsetMs: number, startMs: number, pauseStartMs: number | null, pauseEndMs: number | null): number {
-  if (pauseStartMs == null || pauseEndMs == null) return startMs + effOffsetMs;
-  const preClipMs = pauseStartMs - startMs;
-  const pauseMs = pauseEndMs - pauseStartMs;
-  if (preClipMs <= 0) return startMs + effOffsetMs + pauseMs;
-  if (effOffsetMs <= preClipMs) return startMs + effOffsetMs;
-  return startMs + effOffsetMs + pauseMs;
+// Verteilt eine Kette von Call-Slots über [startMs, endMs] und lässt dabei
+// [pauseStartMs, pauseEndMs] vollständig aus. Slots, die die Pause kreuzen,
+// werden in zwei Segmente pro Teilnehmer aufgeteilt.
+type Slot = { start: number; end: number; memberIndex: number };
+function planBoatSlots(
+  startMs: number, endMs: number,
+  pauseStartMs: number | null, pauseEndMs: number | null,
+  memberCount: number
+): Slot[] {
+  if (memberCount <= 0) return [];
+  const pauseMs = (pauseStartMs != null && pauseEndMs != null && pauseEndMs > pauseStartMs)
+    ? (pauseEndMs - pauseStartMs) : 0;
+  const effectiveMs = Math.max(1, (endMs - startMs) - pauseMs);
+  const perMemberMs = effectiveMs / memberCount;
+
+  const slots: Slot[] = [];
+  let cursor = startMs;
+  for (let i = 0; i < memberCount; i++) {
+    let remaining = perMemberMs;
+    while (remaining > 0.5) {
+      // Wenn Cursor in der Pause → auf Pause-Ende springen
+      if (pauseStartMs != null && pauseEndMs != null && cursor >= pauseStartMs && cursor < pauseEndMs) {
+        cursor = pauseEndMs;
+      }
+      // Nächste Grenze: Pause-Beginn oder Wettkampf-Ende
+      const nextBoundary = (pauseStartMs != null && cursor < pauseStartMs) ? pauseStartMs : endMs;
+      const available = nextBoundary - cursor;
+      if (available <= 0) break;
+      const chunk = Math.min(remaining, available);
+      slots.push({ start: cursor, end: cursor + chunk, memberIndex: i });
+      cursor += chunk;
+      remaining -= chunk;
+      // Falls wir an die Pause-Grenze gestoßen sind: darüber springen
+      if (pauseStartMs != null && pauseEndMs != null && cursor === pauseStartMs && remaining > 0.5) {
+        cursor = pauseEndMs;
+      }
+    }
+  }
+  return slots;
 }
 
 // Pause-aware Call-Generator. Verteilt jede Boot-Besatzung gleichmäßig
-// über Wettkampfzeit (abzüglich Pause). Löscht bestehende Calls des Wettkampfs.
+// über die tatsächliche Fischzeit (Wettkampfzeit abzüglich Pause) und lässt
+// die Pause auf beiden Booten vollständig aus. Löscht bestehende Calls.
 export async function generateCallsForCompetitionShared(competitionId: string): Promise<{ ok?: boolean; count?: number; error?: string }> {
   let compRes = await supabaseAdmin
     .from("competitions")
@@ -43,25 +75,26 @@ export async function generateCallsForCompetitionShared(competitionId: string): 
   const { data: boats } = await supabaseAdmin.from("boats").select("id, sort_order").eq("competition_id", competitionId).order("sort_order");
   if (!boats) return { error: "Keine Boote" };
 
-  const pauseMs = (pauseStartMs != null && pauseEndMs != null) ? (pauseEndMs - pauseStartMs) : 0;
-  const effectiveMs = Math.max(1, endMs - startMs - pauseMs);
-
   const rows: any[] = [];
   for (const b of boats) {
     const { data: members } = await supabaseAdmin.from("boat_members").select("user_id").eq("boat_id", b.id);
     if (!members || members.length === 0) continue;
-    const per = effectiveMs / members.length;
-    for (let i = 0; i < members.length; i++) {
-      const s = effToWall(i * per, startMs, pauseStartMs, pauseEndMs);
-      const e = effToWall((i + 1) * per, startMs, pauseStartMs, pauseEndMs);
-      const callType = members.length === 1 ? "morning" : i === 0 ? "morning" : i === members.length - 1 ? "late" : "mid";
+    const slots = planBoatSlots(startMs, endMs, pauseStartMs, pauseEndMs, members.length);
+    for (const s of slots) {
+      const callType = members.length === 1
+        ? "morning"
+        : s.memberIndex === 0
+          ? "morning"
+          : s.memberIndex === members.length - 1
+            ? "late"
+            : "mid";
       rows.push({
         competition_id: competitionId,
         boat_id: b.id,
-        user_id: members[i].user_id,
+        user_id: members[s.memberIndex].user_id,
         call_type: callType,
-        start_at: new Date(s).toISOString(),
-        end_at:   new Date(e).toISOString(),
+        start_at: new Date(s.start).toISOString(),
+        end_at:   new Date(s.end).toISOString(),
       });
     }
   }

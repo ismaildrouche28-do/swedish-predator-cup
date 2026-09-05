@@ -79,7 +79,14 @@ export default async function LivePage() {
 
         {(comp.start_at && comp.end_at) && (
           <div className="mt-4 pt-3 border-t border-white/20">
-            <LiveClock startAt={comp.start_at} endAt={comp.end_at} />
+            <LiveClock
+              startAt={comp.start_at}
+              endAt={comp.end_at}
+              status={comp.status}
+              pauseStart={comp.pause_start}
+              pauseEnd={comp.pause_end}
+              updatedAt={comp.updated_at}
+            />
           </div>
         )}
       </section>
