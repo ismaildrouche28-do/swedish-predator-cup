@@ -54,9 +54,23 @@ export default async function ProfilPage() {
   return (
     <div>
       <section className="bg-cs-section rounded-3xl p-5 mb-4">
-        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Dein Profil</div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">{user.nickname ?? user.name}</h1>
-        <p className="text-[14px] text-ink-2 mt-1">{user.email}{user.is_admin && <span className="ml-2 inline-block bg-spc-gold/25 text-spc-goldDeep text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Admin</span>}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Dein Profil</div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight truncate">{user.nickname ?? user.name}</h1>
+            <p className="text-[14px] text-ink-2 mt-1">{user.email}{user.is_admin && <span className="ml-2 inline-block bg-spc-gold/25 text-spc-goldDeep text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Admin</span>}</p>
+          </div>
+          <form action="/api/logout" method="post" className="shrink-0">
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-spc-dark text-[13px] font-bold shadow-cs-sm hover:bg-spc-lighter/40 transition">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 17l5-5-5-5M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/>
+              </svg>
+              <span>Profil wechseln</span>
+            </button>
+          </form>
+        </div>
       </section>
 
       <div className="grid lg:grid-cols-[1fr_1fr] gap-3 mb-3">
