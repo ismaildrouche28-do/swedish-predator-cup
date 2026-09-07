@@ -2,7 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body { min-height: 100vh; }
+html, body {
+  min-height: 100vh;
+  /* Kein horizontales Scrollen — vermeidet leere Luecken beim Wischen nach links/rechts */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  max-width: 100%;
+}
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -13,6 +19,13 @@ body {
   letter-spacing: -0.01em;
 }
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+/* Sicherheitsnetz: Bilder + Videos nie breiter als der Container */
+img, video, svg, canvas { max-width: 100%; height: auto; }
+svg { display: block; }
+
+/* Wortumbruch bei langen Strings (URLs, E-Mails) statt horizontalem Scroll */
+body { word-wrap: break-word; overflow-wrap: anywhere; }
 
 .num { font-variant-numeric: tabular-nums; }
 

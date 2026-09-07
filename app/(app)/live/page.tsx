@@ -121,8 +121,8 @@ export default async function LivePage() {
 
       {/* RANKING-Tabelle mit Bonus/Strafe/Trend */}
       <section className="bg-white rounded-3xl overflow-hidden shadow-cs-sm mb-3">
-        <div className="px-5 pt-4 pb-2 grid grid-cols-[42px_1fr_60px_50px_60px_44px] lg:grid-cols-[42px_1fr_74px_54px_74px_50px] gap-3 text-[10px] uppercase tracking-widest font-bold text-ink-3">
-          <span>#</span><span>Name</span><span className="text-right">Pkt</span><span className="text-right">Fänge</span><span className="text-right">Bonus/Strafe</span><span className="text-right">Trend</span>
+        <div className="px-3 sm:px-5 pt-4 pb-2 grid grid-cols-[32px_minmax(0,1fr)_46px_40px_68px_32px] lg:grid-cols-[42px_1fr_74px_54px_100px_50px] gap-2 sm:gap-3 text-[9.5px] sm:text-[10px] uppercase tracking-widest font-bold text-ink-3">
+          <span>#</span><span>Name</span><span className="text-right">Pkt</span><span className="text-right">Fänge</span><span className="text-right">Bonus</span><span className="text-right">Trend</span>
         </div>
         {ranking.length === 0 && <div className="p-10 text-center text-ink-3 text-[14px]">Noch keine Teilnehmer angemeldet.</div>}
         {ranking.map((r: any, idx: number) => {
@@ -132,7 +132,7 @@ export default async function LivePage() {
           const delta = trendMap.get(r.user_id) ?? 0;
           return (
             <Link key={r.user_id} href={`/spieler/${r.user_id}`}
-              className={`grid grid-cols-[42px_1fr_60px_50px_84px_44px] lg:grid-cols-[42px_1fr_74px_54px_100px_50px] gap-3 items-center px-4 lg:px-5 py-3 border-t border-black/[0.04] hover:bg-spc-greyLight transition ${r.user_id === user.id ? "bg-spc-lighter/60" : ""}`}>
+              className={`grid grid-cols-[32px_minmax(0,1fr)_46px_40px_68px_32px] lg:grid-cols-[42px_1fr_74px_54px_100px_50px] gap-2 sm:gap-3 items-center px-3 sm:px-5 py-3 border-t border-black/[0.04] hover:bg-spc-greyLight transition ${r.user_id === user.id ? "bg-spc-lighter/60" : ""}`}>
               <Medal rank={idx + 1} />
               <div className="min-w-0">
                 <div className={`font-bold text-[15px] truncate ${r.user_id === user.id ? "text-spc-dark" : "text-ink"}`}>
