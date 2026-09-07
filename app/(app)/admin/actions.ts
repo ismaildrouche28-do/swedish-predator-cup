@@ -191,6 +191,33 @@ export async function resumeCompetitionAdmin(competitionId: string) {
   revalidatePath("/", "layout");
 }
 
+// Wettkampf inklusive aller zugehoerigen Daten dauerhaft loeschen.
+// Alle FKs sind auf ON DELETE CASCADE gesetzt (competitions -> boats, calls, catches,
+// penalties, competition_settings; boats -> boat_members). Ein einziges DELETE
+// entfernt daher alle Ergebnis-, Wertungs- und Teilnehmerdaten dieses Wettkampfs.
+export async function deleteCompetitionAsAdmin(competitionId: string) {
+  requireAdmin();
+  if (!competitionId) return { error: "Kein Wettkampf angegeben" };
+
+  // Zusaetzlich defensive Loeschung: falls Cascade in einem alten Schema fehlt
+  await supabaseAdmin.from("catches").delete().eq("competition_id", competitionId);
+  await supabaseAdmin.from("penalties").delete().eq("competition_id", competitionId);
+  await supabaseAdmin.from("calls").delete().eq("competition_id", competitionId);
+  // boat_members ueber die boats-Tabelle indirekt (cascade), oder falls Cascade fehlt:
+  const { data: boatRows } = await supabaseAdmin.from("boats").select("id").eq("competition_id", competitionId);
+  for (const b of boatRows ?? []) {
+    await supabaseAdmin.from("boat_members").delete().eq("boat_id", b.id);
+  }
+  await supabaseAdmin.from("boats").delete().eq("competition_id", competitionId);
+  await supabaseAdmin.from("competition_settings").delete().eq("competition_id", competitionId);
+
+  const { error } = await supabaseAdmin.from("competitions").delete().eq("id", competitionId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 export async function finishCompetitionAdmin(competitionId: string) {
   requireAdmin();
   const nowIso = new Date().toISOString();

@@ -1,6 +1,6 @@
 "use client";
 import { useTransition, useState } from "react";
-import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout, createPresetProfiles, deactivateNonPresetProfiles } from "./actions";
+import { createProfile, toggleProfileActive, deleteProfilePermanent, adminLogout, createPresetProfiles, deactivateNonPresetProfiles, deleteCompetitionAsAdmin } from "./actions";
 
 export function CreateProfileForm() {
   const [pending, start] = useTransition();
@@ -98,5 +98,41 @@ export function PresetProfilesButton() {
 
       {msg && <div className="text-[12.5px] font-semibold bg-spc-lighter/40 text-spc-dark rounded-lg p-2">{msg}</div>}
     </div>
+  );
+}
+
+// Kompakter Entfernen-Button pro Wettkampf in der Uebersicht.
+// Mit fester Sicherheitsabfrage vor endgueltiger Loeschung.
+export function DeleteCompetitionButton({ competitionId, competitionName }: { competitionId: string; competitionName: string }) {
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState<string | null>(null);
+  const confirmText = "Möchtest du diesen Wettkampf wirklich dauerhaft entfernen? Alle zugehörigen Ergebnisse und Daten werden ebenfalls gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.";
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          if (!confirm(confirmText)) return;
+          start(async () => {
+            setErr(null);
+            const r = await deleteCompetitionAsAdmin(competitionId);
+            if (r?.error) setErr(r.error);
+          });
+        }}
+        disabled={pending}
+        aria-label={`Wettkampf ${competitionName} entfernen`}
+        title="Wettkampf dauerhaft entfernen"
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-danger/10 text-danger text-[12px] font-bold hover:bg-danger/20 disabled:opacity-50 transition">
+        {pending ? "…" : (
+          <>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6"/>
+            </svg>
+            Entfernen
+          </>
+        )}
+      </button>
+      {err && <span className="text-[11px] text-danger font-semibold">{err}</span>}
+    </>
   );
 }

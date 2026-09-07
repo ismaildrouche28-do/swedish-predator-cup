@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveCompetition, getPrepCompetition, getLatestCompetition } from "@/lib/queries";
 import { KpiCard } from "@/components/KpiCard";
-import { ProfileActions, CreateProfileForm, AdminLogoutButton, PresetProfilesButton } from "./AdminClient";
+import { ProfileActions, CreateProfileForm, AdminLogoutButton, PresetProfilesButton, DeleteCompetitionButton } from "./AdminClient";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -160,17 +160,19 @@ export default async function AdminPage() {
                 : "bg-spc-greyLight";
               return (
                 <div key={c.id}
-                  className={`grid grid-cols-[64px_1fr_100px_auto] gap-3 items-center rounded-xl px-3 py-2.5 transition ${activeHighlight}`}>
-                  <div className="text-[16px] font-bold text-spc-mid num">{c.start_at ? new Date(c.start_at).getFullYear() : "—"}</div>
-                  <div className="min-w-0">
-                    <div className="text-[14.5px] font-bold text-spc-dark truncate">{c.name}</div>
-                    <div className="text-[12px] text-ink-3 truncate">
-                      {c.location ?? "—"}
-                      {c.start_at && <> · {new Date(c.start_at).toLocaleDateString("de-DE")}</>}
+                  className={`rounded-xl px-3 py-2.5 transition ${activeHighlight}`}>
+                  <div className="grid grid-cols-[48px_minmax(0,1fr)_auto] sm:grid-cols-[64px_minmax(0,1fr)_100px] gap-3 items-center">
+                    <div className="text-[16px] font-bold text-spc-mid num">{c.start_at ? new Date(c.start_at).getFullYear() : "—"}</div>
+                    <div className="min-w-0">
+                      <div className="text-[14.5px] font-bold text-spc-dark truncate">{c.name}</div>
+                      <div className="text-[12px] text-ink-3 truncate">
+                        {c.location ?? "—"}
+                        {c.start_at && <> · {new Date(c.start_at).toLocaleDateString("de-DE")}</>}
+                      </div>
                     </div>
+                    <div className={`text-[10px] font-bold px-2 py-1 rounded text-center uppercase tracking-widest ${STATUS_STYLE[c.status]}`}>{STATUS_LABEL[c.status] ?? c.status}</div>
                   </div>
-                  <div className={`text-[10px] font-bold px-2 py-1 rounded text-center uppercase tracking-widest ${STATUS_STYLE[c.status]}`}>{STATUS_LABEL[c.status] ?? c.status}</div>
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                  <div className="flex flex-wrap items-center gap-2 mt-2 pl-[60px] sm:pl-[76px]">
                     {isPrep && (
                       <>
                         <Link href={`/admin/wettkampf-neu?id=${c.id}`} className="text-spc-mid text-[12.5px] font-semibold hover:underline">Konfigurieren</Link>
@@ -188,6 +190,9 @@ export default async function AdminPage() {
                     {c.status === "finished" && (
                       <Link href={`/admin/wettkampf?id=${c.id}`} className="text-spc-mid text-[12.5px] font-semibold hover:underline">Ansehen ›</Link>
                     )}
+                    <span className="ml-auto">
+                      <DeleteCompetitionButton competitionId={c.id} competitionName={c.name ?? ""} />
+                    </span>
                   </div>
                 </div>
               );
