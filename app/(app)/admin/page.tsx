@@ -153,16 +153,14 @@ export default async function AdminPage() {
         ) : (
           <div className="space-y-1.5">
             {sortForOverview(comps ?? []).map((c: any) => {
-              const href = c.status === "prep" ? `/admin/wettkampf-neu?id=${c.id}` : `/admin/wettkampf?id=${c.id}`;
-              const cta = c.status === "prep" ? "Konfigurieren"
-                : (c.status === "running" || c.status === "paused") ? "Steuern"
-                : "Ansehen";
-              const activeHighlight = (c.status === "running" || c.status === "paused")
+              const isPrep = c.status === "prep";
+              const isLive = c.status === "running" || c.status === "paused";
+              const activeHighlight = isLive
                 ? "ring-2 ring-success/40 bg-success/5"
                 : "bg-spc-greyLight";
               return (
-                <Link key={c.id} href={href}
-                  className={`grid grid-cols-[64px_1fr_100px_auto] gap-3 items-center rounded-xl px-3 py-2.5 hover:bg-spc-lighter/40 transition ${activeHighlight}`}>
+                <div key={c.id}
+                  className={`grid grid-cols-[64px_1fr_100px_auto] gap-3 items-center rounded-xl px-3 py-2.5 transition ${activeHighlight}`}>
                   <div className="text-[16px] font-bold text-spc-mid num">{c.start_at ? new Date(c.start_at).getFullYear() : "—"}</div>
                   <div className="min-w-0">
                     <div className="text-[14.5px] font-bold text-spc-dark truncate">{c.name}</div>
@@ -172,8 +170,26 @@ export default async function AdminPage() {
                     </div>
                   </div>
                   <div className={`text-[10px] font-bold px-2 py-1 rounded text-center uppercase tracking-widest ${STATUS_STYLE[c.status]}`}>{STATUS_LABEL[c.status] ?? c.status}</div>
-                  <div className="text-spc-mid text-[12.5px] font-semibold whitespace-nowrap">{cta} ›</div>
-                </Link>
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    {isPrep && (
+                      <>
+                        <Link href={`/admin/wettkampf-neu?id=${c.id}`} className="text-spc-mid text-[12.5px] font-semibold hover:underline">Konfigurieren</Link>
+                        <span className="text-ink-4">·</span>
+                        <Link href={`/admin/wettkampf?id=${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-success text-white text-[12px] font-bold hover:bg-success/90 transition">
+                          Starten ▸
+                        </Link>
+                      </>
+                    )}
+                    {isLive && (
+                      <Link href={`/admin/wettkampf?id=${c.id}`} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-spc-dark text-white text-[12px] font-bold hover:bg-spc-mid transition">
+                        Steuern ›
+                      </Link>
+                    )}
+                    {c.status === "finished" && (
+                      <Link href={`/admin/wettkampf?id=${c.id}`} className="text-spc-mid text-[12.5px] font-semibold hover:underline">Ansehen ›</Link>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>

@@ -36,17 +36,32 @@ export default async function EditWettkampf({ searchParams }: { searchParams: { 
       <Link href="/admin" className="inline-flex items-center gap-1 text-[13px] text-spc-mid font-semibold mb-3">← Admin</Link>
 
       <section className="bg-cs-section rounded-3xl p-5 mb-4">
-        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Phase 2 · Wettkampf steuern</div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">{comp.name}</h1>
-        <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">
-          Status: <strong className="text-spc-dark">{STATUS_LABEL[comp.status] ?? comp.status}</strong> — Fänge und Strafen korrigieren, Wettkampfuhr steuern, Pause verlängern.
-        </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Wettkampf steuern</div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">{comp.name}</h1>
+            <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">
+              Status: <strong className="text-spc-dark">{STATUS_LABEL[comp.status] ?? comp.status}</strong>
+              {comp.status === "prep"
+                ? " — Wettkampf ist vorbereitet. Klick unten auf Wettkampf starten."
+                : " — Fänge und Strafen korrigieren, Wettkampfuhr steuern, Pause verlängern."}
+            </p>
+          </div>
+          {comp.status === "prep" && (
+            <Link href={`/admin/wettkampf-neu?id=${comp.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white text-spc-dark text-[13px] font-semibold shadow-cs-sm hover:bg-spc-lighter/40 transition">
+              ← Konfiguration bearbeiten
+            </Link>
+          )}
+        </div>
       </section>
 
       {/* Wettkampf-Steuerung */}
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
         <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampfuhr</div>
-        <div className="text-[19px] font-bold text-spc-dark mt-0.5 mb-3">Starten · Pausieren · Fortsetzen · Beenden</div>
+        <div className="text-[19px] font-bold text-spc-dark mt-0.5 mb-3">
+          {comp.status === "prep" ? "Wettkampf jetzt starten" : "Starten · Pausieren · Fortsetzen · Beenden"}
+        </div>
         <WettkampfSteuerung competitionId={comp.id} status={comp.status} />
       </div>
 
