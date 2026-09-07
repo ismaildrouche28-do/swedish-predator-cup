@@ -59,8 +59,8 @@ export default async function AdminPage() {
       <PhaseCard
         step="Phase 1"
         title="Wettkampf erstellen und vorbereiten"
-        href="/admin/wettkampf-neu"
-        actionLabel={focusComp?.status === "prep" ? "Vorbereitung fortsetzen" : "Öffnen"}
+        href="/admin/wettkampf-neu?new=1"
+        actionLabel="Neuen Wettkampf anlegen"
         variant="dark"
         bullets={[
           "Einen neuen Wettkampf erstellen",
@@ -131,33 +131,69 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* Archiv */}
+      {/* Wettkampf-Übersicht */}
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
-        <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Archiv</div>
-        <div className="text-[19px] font-bold text-spc-dark">Alle Wettkämpfe</div>
-        <p className="text-[13px] text-ink-3 mt-0.5 mb-3">Klick auf einen Eintrag, um Fänge zu bearbeiten oder die Uhr zu steuern.</p>
-        <div className="space-y-1.5">
-          {(comps ?? []).map((c: any) => (
-            <Link key={c.id} href={`/admin/wettkampf?id=${c.id}`}
-              className="grid grid-cols-[64px_1fr_100px_auto] gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2.5 hover:bg-spc-lighter/40 transition">
-              <div className="text-[16px] font-bold text-spc-mid num">{c.start_at ? new Date(c.start_at).getFullYear() : "—"}</div>
-              <div className="min-w-0">
-                <div className="text-[14.5px] font-bold text-spc-dark truncate">{c.name}</div>
-                <div className="text-[12px] text-ink-3 truncate">{c.location ?? "—"}</div>
-              </div>
-              <div className={`text-[10px] font-bold px-2 py-1 rounded text-center uppercase tracking-widest ${STATUS_STYLE[c.status]}`}>{STATUS_LABEL[c.status] ?? c.status}</div>
-              <div className="text-spc-mid font-bold">›</div>
-            </Link>
-          ))}
-          {(comps ?? []).length === 0 && (
-            <div className="text-[13.5px] text-ink-3 italic py-3">
-              Noch keine Wettkämpfe. Fang in <Link href="/admin/wettkampf-neu" className="text-spc-mid font-semibold hover:underline">Phase 1</Link> an.
-            </div>
-          )}
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkämpfe</div>
+            <div className="text-[19px] font-bold text-spc-dark">Übersicht aller Wettkämpfe</div>
+            <p className="text-[13px] text-ink-3 mt-0.5">Vorbereitet, laufend und beendet — hier wählst du den Wettkampf zum Konfigurieren, Starten oder Steuern.</p>
+          </div>
+          <Link href="/admin/wettkampf-neu?new=1"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-spc-dark text-white font-bold text-[13.5px] hover:bg-spc-mid transition shadow-cs-sm shrink-0">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            Neuen Wettkampf anlegen
+          </Link>
         </div>
+
+        {(comps ?? []).length === 0 ? (
+          <div className="text-[13.5px] text-ink-3 italic py-3">
+            Noch kein Wettkampf. Klick oben rechts auf <strong className="text-spc-dark font-semibold">„Neuen Wettkampf anlegen"</strong>.
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {sortForOverview(comps ?? []).map((c: any) => {
+              const href = c.status === "prep" ? `/admin/wettkampf-neu?id=${c.id}` : `/admin/wettkampf?id=${c.id}`;
+              const cta = c.status === "prep" ? "Konfigurieren"
+                : (c.status === "running" || c.status === "paused") ? "Steuern"
+                : "Ansehen";
+              const activeHighlight = (c.status === "running" || c.status === "paused")
+                ? "ring-2 ring-success/40 bg-success/5"
+                : "bg-spc-greyLight";
+              return (
+                <Link key={c.id} href={href}
+                  className={`grid grid-cols-[64px_1fr_100px_auto] gap-3 items-center rounded-xl px-3 py-2.5 hover:bg-spc-lighter/40 transition ${activeHighlight}`}>
+                  <div className="text-[16px] font-bold text-spc-mid num">{c.start_at ? new Date(c.start_at).getFullYear() : "—"}</div>
+                  <div className="min-w-0">
+                    <div className="text-[14.5px] font-bold text-spc-dark truncate">{c.name}</div>
+                    <div className="text-[12px] text-ink-3 truncate">
+                      {c.location ?? "—"}
+                      {c.start_at && <> · {new Date(c.start_at).toLocaleDateString("de-DE")}</>}
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-bold px-2 py-1 rounded text-center uppercase tracking-widest ${STATUS_STYLE[c.status]}`}>{STATUS_LABEL[c.status] ?? c.status}</div>
+                  <div className="text-spc-mid text-[12.5px] font-semibold whitespace-nowrap">{cta} ›</div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+// Übersichts-Sortierung: erst offene Wettkämpfe (running, paused, prep), dann finished
+function sortForOverview(list: any[]): any[] {
+  const rank: Record<string, number> = { running: 0, paused: 1, prep: 2, finished: 3 };
+  return [...list].sort((a, b) => {
+    const ra = rank[a.status] ?? 99;
+    const rb = rank[b.status] ?? 99;
+    if (ra !== rb) return ra - rb;
+    const ta = a.created_at ? +new Date(a.created_at) : 0;
+    const tb = b.created_at ? +new Date(b.created_at) : 0;
+    return tb - ta;
+  });
 }
 
 function PhaseCard({ step, title, href, actionLabel, bullets, variant, disabled }: {

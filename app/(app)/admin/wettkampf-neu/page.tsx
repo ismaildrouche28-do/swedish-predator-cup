@@ -1,22 +1,36 @@
 import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
+import { supabaseAdmin } from "@/lib/supabase";
 import { CreateForm, ParticipantPicker, RemoveButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow } from "./SetupForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function SetupPage() {
+export default async function SetupPage({ searchParams }: { searchParams: { id?: string; new?: string } }) {
   requireAdmin();
-  const active = await getActiveCompetition();
-  const prep = active ? null : await getPrepCompetition();
-  const comp = active ?? prep;
+
+  // 1) Wenn ?new=1 gesetzt: immer CreateForm anzeigen
+  // 2) Wenn ?id=X gesetzt: diesen Wettkampf laden
+  // 3) Sonst: laufender oder erster prep Wettkampf (Legacy-Fallback)
+  let comp: any = null;
+  if (searchParams.new === "1") {
+    comp = null;
+  } else if (searchParams.id) {
+    const { data } = await supabaseAdmin.from("competitions").select("*").eq("id", searchParams.id).maybeSingle();
+    comp = data;
+  } else {
+    const active = await getActiveCompetition();
+    const prep = active ? null : await getPrepCompetition();
+    comp = active ?? prep;
+  }
 
   if (!comp) return (
     <div>
+      <Link href="/admin" className="inline-flex items-center gap-1 text-[13px] text-spc-mid font-semibold mb-3">← Admin</Link>
       <section className="bg-cs-section rounded-3xl p-5 mb-4">
-        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Kein Wettkampf</div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">Los geht's</h1>
-        <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">Es läuft aktuell kein SPC. Leg jetzt einen neuen an — Teilnehmer, Boote und Regeln folgen im nächsten Schritt.</p>
+        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Neuer Wettkampf</div>
+        <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">Neuen Wettkampf anlegen</h1>
+        <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">Grunddaten festlegen. Nach dem Anlegen findest du den Wettkampf in der Übersicht — er wird <strong className="text-spc-dark">nicht automatisch aktiv</strong>.</p>
       </section>
       <div className="max-w-[540px]"><CreateForm /></div>
     </div>

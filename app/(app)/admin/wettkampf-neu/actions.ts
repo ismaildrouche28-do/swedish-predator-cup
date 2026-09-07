@@ -41,7 +41,8 @@ export async function createCompetition(formData: FormData) {
   ]);
 
   revalidatePath("/", "layout");
-  redirect("/admin/wettkampf-neu");
+  // Neuer Wettkampf wird gezielt per ?id geladen — auch wenn schon andere in prep sind
+  redirect(`/admin/wettkampf-neu?id=${comp.id}`);
 }
 
 export async function addParticipantById(userId: string, boatId: string) {
