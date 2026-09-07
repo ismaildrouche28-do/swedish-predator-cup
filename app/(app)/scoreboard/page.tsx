@@ -46,12 +46,7 @@ export default async function ScoreboardPage() {
       </section>
 
       {catches.length > 0 && (
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-2.5 mb-3">
-          <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
-            <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-1">Punkte-Verlauf</div>
-            <div className="text-[12.5px] text-ink-3 mb-3">Wie sich deine Punkte über die Zeit entwickelt haben</div>
-            <PointsChart catches={catches} />
-          </div>
+        <div className="mb-3">
           <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
             <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-1">Fisch-Art-Verteilung</div>
             <div className="text-[12.5px] text-ink-3 mb-3">Anteil deiner gewerteten Fänge</div>
@@ -128,42 +123,6 @@ export default async function ScoreboardPage() {
 
 function NoComp() {
   return <div className="bg-white rounded-3xl p-10 text-center shadow-cs-sm"><div className="text-5xl mb-3">🎣</div><div className="text-[20px] font-bold text-spc-dark">Kein Wettkampf</div></div>;
-}
-
-function PointsChart({ catches }: { catches: any[] }) {
-  const scored = catches.filter(c => c.is_scored).sort((a, b) => +new Date(a.caught_at) - +new Date(b.caught_at));
-  if (scored.length === 0) return <div className="text-[13px] text-ink-3 italic py-4 text-center">Noch keine gewerteten Fänge.</div>;
-  let cum = 0;
-  const pts = scored.map(c => { cum += c.total_points; return { t: new Date(c.caught_at).getTime(), p: cum }; });
-  const W = 500, H = 160, padL = 30, padR = 10, padT = 12, padB = 20;
-  const iw = W - padL - padR, ih = H - padT - padB;
-  const maxY = Math.max(...pts.map(p => p.p), 100);
-  const tMin = pts[0].t, tMax = pts[pts.length - 1].t;
-  const range = Math.max(tMax - tMin, 60_000);
-  const x = (t: number) => padL + ((t - tMin) / range) * iw;
-  const y = (v: number) => padT + ih - (v / maxY) * ih;
-  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${x(p.t).toFixed(1)} ${y(p.p).toFixed(1)}`).join(" ");
-  const area = `${line} L ${x(pts[pts.length - 1].t).toFixed(1)} ${padT + ih} L ${x(pts[0].t).toFixed(1)} ${padT + ih} Z`;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" className="max-w-full">
-      <defs>
-        <linearGradient id="pt-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#0a6db8" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#0a6db8" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0.25, 0.5, 0.75, 1].map(f => {
-        const yy = padT + ih * (1 - f);
-        return <line key={f} x1={padL} x2={W - padR} y1={yy} y2={yy} stroke="#e5e5ea" />;
-      })}
-      <path d={area} fill="url(#pt-fill)" />
-      <path d={line} stroke="#0a6db8" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((p, i) => (
-        <circle key={i} cx={x(p.t)} cy={y(p.p)} r={i === pts.length - 1 ? 5 : 3.5}
-          fill={i === pts.length - 1 ? "#0a6db8" : "#ffffff"} stroke="#0a6db8" strokeWidth="2" />
-      ))}
-    </svg>
-  );
 }
 
 function SpeciesDonut({ scored }: { scored: any[] }) {

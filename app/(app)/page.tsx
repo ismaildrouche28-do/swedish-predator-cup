@@ -58,6 +58,9 @@ export default async function Dashboard() {
           status={comp.status}
           pauseStart={comp.pause_start}
           pauseEnd={comp.pause_end}
+          actualStartAt={comp.actual_start_at}
+          pausedAt={comp.paused_at}
+          accumulatedPauseMs={comp.accumulated_pause_ms}
           updatedAt={comp.updated_at}
         />
       )}

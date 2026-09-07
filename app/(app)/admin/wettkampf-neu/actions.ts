@@ -126,14 +126,32 @@ export async function startCompetition(competitionId: string) {
   const { count } = await supabaseAdmin.from("calls").select("id", { count: "exact", head: true }).eq("competition_id", competitionId);
   if (!count || count === 0) await generateCallsForCompetition(competitionId);
 
-  await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  const withTimer: any = { status: "running", actual_start_at: nowIso, paused_at: null, accumulated_pause_ms: 0, updated_at: nowIso };
+  const minimal: any = { status: "running", updated_at: nowIso };
+  let res = await supabaseAdmin.from("competitions").update(withTimer).eq("id", competitionId);
+  if (res.error && /actual_start_at|paused_at|accumulated_pause_ms/i.test(res.error.message)) {
+    await supabaseAdmin.from("competitions").update(minimal).eq("id", competitionId);
+  }
   revalidatePath("/", "layout");
   redirect("/");
 }
 
 export async function finishCompetition(competitionId: string) {
   requireAdmin();
-  await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  const { data: comp } = await supabaseAdmin
+    .from("competitions").select("paused_at, accumulated_pause_ms").eq("id", competitionId).maybeSingle();
+  const anyComp = comp as any;
+  const addPauseMs = anyComp?.paused_at
+    ? Math.max(0, Date.now() - new Date(anyComp.paused_at).getTime()) : 0;
+  const newAcc = Number(anyComp?.accumulated_pause_ms ?? 0) + addPauseMs;
+  const withTimer: any = { status: "finished", paused_at: null, accumulated_pause_ms: newAcc, updated_at: nowIso };
+  const minimal: any = { status: "finished", updated_at: nowIso };
+  let res = await supabaseAdmin.from("competitions").update(withTimer).eq("id", competitionId);
+  if (res.error && /actual_start_at|paused_at|accumulated_pause_ms/i.test(res.error.message)) {
+    await supabaseAdmin.from("competitions").update(minimal).eq("id", competitionId);
+  }
   revalidatePath("/", "layout");
   redirect("/");
 }

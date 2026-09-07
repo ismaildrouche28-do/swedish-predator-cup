@@ -85,6 +85,9 @@ export default async function LivePage() {
               status={comp.status}
               pauseStart={comp.pause_start}
               pauseEnd={comp.pause_end}
+              actualStartAt={comp.actual_start_at}
+              pausedAt={comp.paused_at}
+              accumulatedPauseMs={comp.accumulated_pause_ms}
               updatedAt={comp.updated_at}
             />
           </div>
@@ -263,7 +266,7 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
     );
   }
 
-  // Pro User: kumulative Punkte-Reihe
+  // Pro User: kumulative Punkte-Reihe entlang gemeinsamer Zeitachse [tMin..tMax]
   const series = new Map<string, { t: number; p: number }[]>();
   const cumul: any = {};
   const sorted = [...catches].sort((a, b) => +new Date(a.caught_at) - +new Date(b.caught_at));
@@ -273,8 +276,16 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
     // Admin ausschließen
     if (usersById.get(c.user_id)?.is_admin) continue;
     cumul[c.user_id] = (cumul[c.user_id] ?? 0) + c.total_points;
-    if (!series.has(c.user_id)) series.set(c.user_id, []);
+    if (!series.has(c.user_id)) {
+      // Startpunkt bei tMin auf 0, damit die Linie von links losläuft
+      series.set(c.user_id, [{ t: tMin, p: 0 }]);
+    }
     series.get(c.user_id)!.push({ t: new Date(c.caught_at).getTime(), p: cumul[c.user_id] });
+  }
+  // Alle Reihen bis tMax verlängern (Punktestand hält an) — damit alle parallel bis rechts laufen
+  for (const [uid, pts] of series) {
+    const last = pts[pts.length - 1];
+    if (last.t < tMax) pts.push({ t: tMax, p: last.p });
   }
 
   const maxP = Math.max(1, ...Object.values(cumul) as number[]);

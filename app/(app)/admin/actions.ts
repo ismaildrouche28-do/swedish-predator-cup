@@ -135,6 +135,16 @@ export async function deletePenaltyAsAdmin(penaltyId: string) {
   revalidatePath("/", "layout");
 }
 
+// Helper: update mit Fallback falls die neuen Timer-Spalten (actual_start_at, paused_at,
+// accumulated_pause_ms) noch nicht in der DB existieren.
+async function updateCompRobust(competitionId: string, withTimer: any, minimal: any) {
+  let res = await supabaseAdmin.from("competitions").update(withTimer).eq("id", competitionId);
+  if (res.error && /actual_start_at|paused_at|accumulated_pause_ms/i.test(res.error.message)) {
+    res = await supabaseAdmin.from("competitions").update(minimal).eq("id", competitionId);
+  }
+  return res;
+}
+
 // Wettkampf-Steuerung: Start / Pause / Fortsetzen / Beenden
 export async function startCompetitionAdmin(competitionId: string) {
   requireAdmin();
@@ -143,25 +153,57 @@ export async function startCompetitionAdmin(competitionId: string) {
   if (!count || count === 0) {
     await generateCallsForCompetitionShared(competitionId);
   }
-  await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  await updateCompRobust(competitionId,
+    { status: "running", actual_start_at: nowIso, paused_at: null, accumulated_pause_ms: 0, updated_at: nowIso },
+    { status: "running", updated_at: nowIso });
   revalidatePath("/", "layout");
 }
 
 export async function pauseCompetitionAdmin(competitionId: string) {
   requireAdmin();
-  await supabaseAdmin.from("competitions").update({ status: "paused", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  // paused_at nur setzen wenn nicht bereits gesetzt
+  const { data: comp } = await supabaseAdmin
+    .from("competitions").select("paused_at").eq("id", competitionId).maybeSingle();
+  const alreadyPaused = !!(comp && (comp as any).paused_at);
+  await updateCompRobust(competitionId,
+    { status: "paused", paused_at: alreadyPaused ? (comp as any).paused_at : nowIso, updated_at: nowIso },
+    { status: "paused", updated_at: nowIso });
   revalidatePath("/", "layout");
 }
 
 export async function resumeCompetitionAdmin(competitionId: string) {
   requireAdmin();
-  await supabaseAdmin.from("competitions").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  // Zeit der offenen Pause aufaddieren
+  const { data: comp } = await supabaseAdmin
+    .from("competitions").select("paused_at, accumulated_pause_ms").eq("id", competitionId).maybeSingle();
+  const anyComp = comp as any;
+  let addPauseMs = 0;
+  if (anyComp?.paused_at) {
+    addPauseMs = Math.max(0, Date.now() - new Date(anyComp.paused_at).getTime());
+  }
+  const newAcc = Number(anyComp?.accumulated_pause_ms ?? 0) + addPauseMs;
+  await updateCompRobust(competitionId,
+    { status: "running", paused_at: null, accumulated_pause_ms: newAcc, updated_at: nowIso },
+    { status: "running", updated_at: nowIso });
   revalidatePath("/", "layout");
 }
 
 export async function finishCompetitionAdmin(competitionId: string) {
   requireAdmin();
-  await supabaseAdmin.from("competitions").update({ status: "finished", updated_at: new Date().toISOString() }).eq("id", competitionId);
+  const nowIso = new Date().toISOString();
+  // Falls aktuell pausiert: Pause aufaddieren und schließen
+  const { data: comp } = await supabaseAdmin
+    .from("competitions").select("paused_at, accumulated_pause_ms").eq("id", competitionId).maybeSingle();
+  const anyComp = comp as any;
+  const addPauseMs = anyComp?.paused_at
+    ? Math.max(0, Date.now() - new Date(anyComp.paused_at).getTime()) : 0;
+  const newAcc = Number(anyComp?.accumulated_pause_ms ?? 0) + addPauseMs;
+  await updateCompRobust(competitionId,
+    { status: "finished", paused_at: null, accumulated_pause_ms: newAcc, updated_at: nowIso },
+    { status: "finished", updated_at: nowIso });
   revalidatePath("/", "layout");
 }
 
