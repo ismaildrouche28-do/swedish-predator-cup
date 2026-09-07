@@ -1,5 +1,5 @@
 "use client";
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { updateCatchAsAdmin, deleteCatchAsAdmin, startCompetitionAdmin, pauseCompetitionAdmin, resumeCompetitionAdmin, finishCompetitionAdmin, createPenaltyAsAdmin, extendPauseAsAdmin, deletePenaltyAsAdmin } from "../actions";
 
 function toLocalInput(v: string | null | undefined): string {
@@ -7,6 +7,22 @@ function toLocalInput(v: string | null | undefined): string {
   const d = new Date(v);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Datetime-local Felder in echte ISO-Strings ueberfuehren BEVOR sie an den Server gehen —
+// muss auf dem Client passieren, damit die Browser-Zeitzone gilt (Server steht auf UTC).
+const DT_FIELDS = ["start_at", "end_at", "pause_start", "pause_end"];
+function toIsoFormData(fd: FormData): FormData {
+  const out = new FormData();
+  for (const [k, v] of Array.from(fd.entries())) {
+    if (DT_FIELDS.includes(k) && typeof v === "string" && v) {
+      const d = new Date(v);
+      out.set(k, isNaN(+d) ? "" : d.toISOString());
+    } else {
+      out.set(k, v);
+    }
+  }
+  return out;
 }
 
 const SPECIES: any = { perch: "Barsch", zander: "Zander", pike: "Hecht" };
@@ -167,7 +183,9 @@ export function DeletePenaltyButton({ id }: { id: string }) {
 export function PauseWindow({ competitionId, pauseStart, pauseEnd }: { competitionId: string; pauseStart: string | null; pauseEnd: string | null }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ t: "ok" | "err"; m: string } | null>(null);
-  const fmt = (v: string | null) => v ? new Date(v).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const fmt = (v: string | null) => v && mounted ? new Date(v).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
   return (
     <div>
       <div className="grid sm:grid-cols-2 gap-2 mb-3">
@@ -183,7 +201,7 @@ export function PauseWindow({ competitionId, pauseStart, pauseEnd }: { competiti
       <form
         action={(fd) => start(async () => {
           setMsg(null);
-          const r = await extendPauseAsAdmin(competitionId, fd);
+          const r = await extendPauseAsAdmin(competitionId, toIsoFormData(fd));
           if (r?.error) setMsg({ t: "err", m: r.error });
           else setMsg({ t: "ok", m: "Pausen-Ende aktualisiert." });
         })}

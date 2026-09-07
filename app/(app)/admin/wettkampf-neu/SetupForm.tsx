@@ -1,5 +1,5 @@
 "use client";
-import { useTransition, useState } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { createCompetition, addParticipantById, removeParticipant, startCompetition, finishCompetition, autoGenerateCalls, updateWettkampfzeit, createCallManual, updateCallManual, deleteCallManual } from "./actions";
 
 function toLocalInput(v: string | null | undefined): string {
@@ -7,6 +7,23 @@ function toLocalInput(v: string | null | undefined): string {
   const d = new Date(v);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// datetime-local Felder in echte ISO-Strings umwandeln BEVOR sie an den Server gehen —
+// muss auf dem Client passieren, damit die Browser-Zeitzone verwendet wird.
+// Der Server steht auf UTC und wuerde die Zeitangabe sonst falsch interpretieren.
+const DT_FIELDS = ["start_at", "end_at", "pause_start", "pause_end"];
+function toIsoFormData(fd: FormData): FormData {
+  const out = new FormData();
+  for (const [k, v] of Array.from(fd.entries())) {
+    if (DT_FIELDS.includes(k) && typeof v === "string" && v) {
+      const d = new Date(v);
+      out.set(k, isNaN(+d) ? "" : d.toISOString());
+    } else {
+      out.set(k, v);
+    }
+  }
+  return out;
 }
 
 export function CreateForm() {
@@ -17,7 +34,7 @@ export function CreateForm() {
       action={(fd) => start(async () => {
         setErr(null);
         try {
-          const r: any = await createCompetition(fd);
+          const r: any = await createCompetition(toIsoFormData(fd));
           if (r?.error) setErr(r.error);
           // ok-Fall: server-Action redirected → kein Handling nötig
         } catch (e: any) {
@@ -76,6 +93,9 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
   const [editing, setEditing] = useState(false);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ t: "ok" | "err"; m: string } | null>(null);
+  // Mount-Guard, damit Zeiten in der Browser-Zeitzone (nicht UTC vom SSR) angezeigt werden
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const fmtDate = (v: string | null | undefined) => v
     ? new Date(v).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
@@ -83,6 +103,8 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
   const fmtTime = (v: string | null | undefined) => v
     ? new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
     : "—";
+  const showTime = (v: string | null | undefined) => mounted ? fmtTime(v) : "…";
+  const showDate = (v: string | null | undefined) => mounted ? fmtDate(v) : "…";
 
   if (!editing) {
     return (
@@ -100,12 +122,12 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-2 mt-4">
-          <SummaryPill label="Datum">{fmtDate(comp.start_at)}</SummaryPill>
+          <SummaryPill label="Datum">{showDate(comp.start_at)}</SummaryPill>
           <SummaryPill label="Ort">{comp.location ?? "—"}</SummaryPill>
-          <SummaryPill label="Angelstart">{fmtTime(comp.start_at)} Uhr</SummaryPill>
-          <SummaryPill label="Angelende">{fmtTime(comp.end_at)} Uhr</SummaryPill>
-          <SummaryPill label="Pause ab">{comp.pause_start ? `${fmtTime(comp.pause_start)} Uhr` : "—"}</SummaryPill>
-          <SummaryPill label="Pause bis">{comp.pause_end ? `${fmtTime(comp.pause_end)} Uhr` : "—"}</SummaryPill>
+          <SummaryPill label="Angelstart">{showTime(comp.start_at)} Uhr</SummaryPill>
+          <SummaryPill label="Angelende">{showTime(comp.end_at)} Uhr</SummaryPill>
+          <SummaryPill label="Pause ab">{comp.pause_start ? `${showTime(comp.pause_start)} Uhr` : "—"}</SummaryPill>
+          <SummaryPill label="Pause bis">{comp.pause_end ? `${showTime(comp.pause_end)} Uhr` : "—"}</SummaryPill>
         </div>
       </div>
     );
@@ -114,7 +136,7 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
   return (
     <form action={(fd) => start(async () => {
       setMsg(null);
-      const r = await updateWettkampfzeit(comp.id, fd);
+      const r = await updateWettkampfzeit(comp.id, toIsoFormData(fd));
       if (r?.error) setMsg({ t: "err", m: r.error });
       else { setMsg({ t: "ok", m: "Wettkampfzeit aktualisiert." }); setEditing(false); }
     })} className="bg-white rounded-3xl p-5 shadow-cs-sm space-y-3">
@@ -301,7 +323,7 @@ export function ManualCallForm({ competitionId, boats, participants }: {
   return (
     <form action={(fd) => start(async () => {
       setMsg(null);
-      const r = await createCallManual(competitionId, fd);
+      const r = await createCallManual(competitionId, toIsoFormData(fd));
       if (r?.error) setMsg({ t: "err", m: r.error });
       else setMsg({ t: "ok", m: "Call angelegt." });
     })} className="grid gap-2 sm:grid-cols-[130px_1fr_140px_140px_120px_auto] items-end bg-spc-greyLight rounded-2xl p-3">
@@ -364,7 +386,7 @@ export function CallRow({ call, participants }: {
       <form
         action={(fd) => start(async () => {
           setErr(null);
-          const r = await updateCallManual(call.id, fd);
+          const r = await updateCallManual(call.id, toIsoFormData(fd));
           if (r?.error) { setErr(r.error); return; }
           setEditing(false);
         })}
