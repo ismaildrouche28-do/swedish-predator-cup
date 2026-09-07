@@ -13,6 +13,7 @@ type ClockProps = {
   pausedAt?: string | null;               // Zeitpunkt der aktuell offenen Pause (paused)
   accumulatedPauseMs?: number | null;     // Summe aller abgeschlossenen Pausen in ms
   updatedAt?: string | null;              // Legacy-Fallback
+  showStatusPill?: boolean;               // default true — Statuspill oberhalb „Verbleibend"
 };
 
 const fmt = (ms: number) => {
@@ -31,7 +32,7 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 export function LiveClock(props: ClockProps) {
-  const { startAt, endAt, status = "prep", pauseStart, pauseEnd, actualStartAt, pausedAt, accumulatedPauseMs, updatedAt } = props;
+  const { startAt, endAt, status = "prep", pauseStart, pauseEnd, actualStartAt, pausedAt, accumulatedPauseMs, updatedAt, showStatusPill = true } = props;
 
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -82,14 +83,33 @@ export function LiveClock(props: ClockProps) {
 
   const progress = fullFishingMs > 0 ? (1 - remainingMs / fullFishingMs) : (status === "finished" ? 1 : 0);
 
+  // Statuspill die oberhalb von „Verbleibend" sitzt (rechte Spalte, eindeutig zugeordnet)
+  const StatusPill = () => {
+    if (status === "running") return (
+      <div className="inline-flex items-center gap-1.5 bg-danger/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
+        <span className="w-1.5 h-1.5 rounded-full bg-white pulse-dot"/> Live
+      </div>
+    );
+    if (status === "paused") return (
+      <div className="inline-flex items-center gap-1.5 bg-spc-gold/90 text-spc-goldDeep text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Pause</div>
+    );
+    if (status === "prep") return (
+      <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Vorbereitet</div>
+    );
+    return (
+      <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Beendet</div>
+    );
+  };
+
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-[10px] uppercase tracking-widest text-white/60 font-bold">Wettkampf · {STATUS_LABEL[status]}</div>
           <div className="text-[12.5px] text-white/80 mt-0.5">{subLabel}</div>
         </div>
-        <div className="text-right">
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {showStatusPill && <StatusPill />}
           <div className="text-[10px] uppercase tracking-widest text-white/60 font-bold">Verbleibend</div>
           <div className="text-[22px] font-bold num text-white leading-none">{fmt(remainingMs)}</div>
         </div>
@@ -101,25 +121,11 @@ export function LiveClock(props: ClockProps) {
   );
 }
 
-// Home-Variante: Uhr mit eigener Gradient-Card
+// Home-Variante: Uhr mit eigener Gradient-Card. Statuspill sitzt in LiveClock direkt
+// ueber „Verbleibend" (rechte Spalte).
 export function HomeClockCard(props: ClockProps) {
-  const running = props.status === "running";
   return (
-    <section className="bg-cs-gradient shadow-cs rounded-3xl p-5 mb-4 text-white relative overflow-hidden">
-      {running && (
-        <div className="absolute top-3 right-4 inline-flex items-center gap-1.5 bg-danger/90 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">
-          <span className="w-1.5 h-1.5 rounded-full bg-white pulse-dot"/> Live
-        </div>
-      )}
-      {props.status === "paused" && (
-        <div className="absolute top-3 right-4 inline-flex items-center gap-1.5 bg-spc-gold/90 text-spc-goldDeep text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Pause</div>
-      )}
-      {props.status === "prep" && (
-        <div className="absolute top-3 right-4 inline-flex items-center gap-1.5 bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Vorbereitet</div>
-      )}
-      {props.status === "finished" && (
-        <div className="absolute top-3 right-4 inline-flex items-center gap-1.5 bg-white/20 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">Beendet</div>
-      )}
+    <section className="bg-cs-gradient shadow-cs rounded-3xl p-5 mb-4 text-white">
       <LiveClock {...props} />
     </section>
   );

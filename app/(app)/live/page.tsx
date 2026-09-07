@@ -89,6 +89,7 @@ export default async function LivePage() {
               pausedAt={comp.paused_at}
               accumulatedPauseMs={comp.accumulated_pause_ms}
               updatedAt={comp.updated_at}
+              showStatusPill={false}
             />
           </div>
         )}
