@@ -7,15 +7,25 @@ import { redirect } from "next/navigation";
 
 const generateCallsForCompetition = generateCallsForCompetitionShared;
 
+// datetime-local Feld liefert "2026-09-05T10:00" — naive lokale Zeit.
+// Diese als lokal interpretieren und in ISO-UTC ueberfuehren, damit Postgres timestamptz
+// nicht faelschlich als UTC 10:00 speichert (was beim Zurueckladen +2h Drift verursacht).
+function localToIso(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const d = new Date(v);
+  if (isNaN(+d)) return null;
+  return d.toISOString();
+}
+
 export async function createCompetition(formData: FormData) {
   requireAdmin();
   const user = await requireProfile();
   const name = String(formData.get("name") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim() || null;
-  const start_at = String(formData.get("start_at") ?? "") || null;
-  const end_at = String(formData.get("end_at") ?? "") || null;
-  const pause_start = String(formData.get("pause_start") ?? "") || null;
-  const pause_end   = String(formData.get("pause_end") ?? "") || null;
+  const start_at = localToIso(String(formData.get("start_at") ?? ""));
+  const end_at = localToIso(String(formData.get("end_at") ?? ""));
+  const pause_start = localToIso(String(formData.get("pause_start") ?? ""));
+  const pause_end   = localToIso(String(formData.get("pause_end") ?? ""));
   if (!name) return { error: "Name ist Pflicht" };
   if (!start_at || !end_at) return { error: "Angelstart und Angelende sind Pflicht" };
   if (new Date(end_at) <= new Date(start_at)) return { error: "Angelende muss nach Angelstart liegen" };
@@ -162,10 +172,10 @@ export async function updateWettkampfzeit(competitionId: string, formData: FormD
   requireAdmin();
   const name = String(formData.get("name") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim() || null;
-  const start_at = String(formData.get("start_at") ?? "") || null;
-  const end_at   = String(formData.get("end_at") ?? "") || null;
-  const pause_start = String(formData.get("pause_start") ?? "") || null;
-  const pause_end   = String(formData.get("pause_end") ?? "") || null;
+  const start_at = localToIso(String(formData.get("start_at") ?? ""));
+  const end_at   = localToIso(String(formData.get("end_at") ?? ""));
+  const pause_start = localToIso(String(formData.get("pause_start") ?? ""));
+  const pause_end   = localToIso(String(formData.get("pause_end") ?? ""));
   if (!name) return { error: "Name ist Pflicht" };
   if (!start_at || !end_at) return { error: "Angelstart und Angelende sind Pflicht" };
   if (new Date(end_at) <= new Date(start_at)) return { error: "Angelende muss nach Angelstart liegen" };

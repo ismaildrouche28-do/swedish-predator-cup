@@ -70,21 +70,61 @@ export function CreateForm() {
   );
 }
 
-// Zeit-Editor: bearbeitet Grunddaten + Wettkampfzeit eines bestehenden Wettkampfs
+// Wettkampfzeit-Ansicht: standardmäßig read-only Zusammenfassung der beim Anlegen
+// erfassten Daten. Nur wenn der Admin auf „Bearbeiten" klickt, erscheint das Formular.
 export function WettkampfzeitForm({ comp }: { comp: any }) {
+  const [editing, setEditing] = useState(false);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ t: "ok" | "err"; m: string } | null>(null);
+
+  const fmtDate = (v: string | null | undefined) => v
+    ? new Date(v).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
+    : "—";
+  const fmtTime = (v: string | null | undefined) => v
+    ? new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+    : "—";
+
+  if (!editing) {
+    return (
+      <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampfzeit</div>
+            <div className="text-[16px] font-bold text-spc-dark">Beim Anlegen erfasst</div>
+            <p className="text-[12.5px] text-ink-3 mt-0.5">Wird im gesamten Setup und in der Wettkampf-Steuerung verwendet.</p>
+          </div>
+          <button onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-spc-lighter text-spc-dark text-[13px] font-semibold hover:bg-spc-lighter/70 transition shrink-0">
+            Bearbeiten
+          </button>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-2 mt-4">
+          <SummaryPill label="Datum">{fmtDate(comp.start_at)}</SummaryPill>
+          <SummaryPill label="Ort">{comp.location ?? "—"}</SummaryPill>
+          <SummaryPill label="Angelstart">{fmtTime(comp.start_at)} Uhr</SummaryPill>
+          <SummaryPill label="Angelende">{fmtTime(comp.end_at)} Uhr</SummaryPill>
+          <SummaryPill label="Pause ab">{comp.pause_start ? `${fmtTime(comp.pause_start)} Uhr` : "—"}</SummaryPill>
+          <SummaryPill label="Pause bis">{comp.pause_end ? `${fmtTime(comp.pause_end)} Uhr` : "—"}</SummaryPill>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form action={(fd) => start(async () => {
       setMsg(null);
       const r = await updateWettkampfzeit(comp.id, fd);
       if (r?.error) setMsg({ t: "err", m: r.error });
-      else setMsg({ t: "ok", m: "Wettkampfzeit gespeichert." });
+      else { setMsg({ t: "ok", m: "Wettkampfzeit aktualisiert." }); setEditing(false); }
     })} className="bg-white rounded-3xl p-5 shadow-cs-sm space-y-3">
-      <div>
-        <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampfzeit</div>
-        <div className="text-[16px] font-bold text-spc-dark">Datum, Zeitfenster und Pause</div>
-        <p className="text-[12.5px] text-ink-3 mt-0.5">Beispiel: 10:00–19:00 Uhr, Pause 14:00–15:00 Uhr. Pause kann später verlängert werden.</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Wettkampfzeit bearbeiten</div>
+          <div className="text-[16px] font-bold text-spc-dark">Änderungen speichern</div>
+        </div>
+        <button type="button" onClick={() => setEditing(false)}
+          className="text-[13px] text-ink-3 font-semibold hover:underline shrink-0">Abbrechen</button>
       </div>
       <div className="grid sm:grid-cols-2 gap-2">
         <label className="block bg-spc-greyLight rounded-xl p-3">
@@ -117,6 +157,15 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
       </button>
       {msg && <div className={`text-[13px] rounded-xl p-3 ${msg.t === "err" ? "bg-danger/10 text-danger" : "bg-success/10 text-success-dark font-semibold"}`}>{msg.m}</div>}
     </form>
+  );
+}
+
+function SummaryPill({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-spc-greyLight rounded-xl px-3 py-2">
+      <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold">{label}</div>
+      <div className="text-[14.5px] font-bold text-spc-dark num">{children}</div>
+    </div>
   );
 }
 
