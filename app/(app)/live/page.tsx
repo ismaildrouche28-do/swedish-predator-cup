@@ -187,9 +187,8 @@ function BonusChip({ label, kind }: { label: string; kind: "ok" | "bad" }) {
 }
 
 function TrendArrow({ delta }: { delta: number }) {
-  if (delta === 0) {
-    return <div className="text-right text-[13px] text-ink-4 num font-semibold">—</div>;
-  }
+  // Nur anzeigen wenn tatsächliche Positionsveränderung — sonst leer
+  if (delta === 0) return <div />;
   const up = delta > 0;
   return (
     <div className={`text-right text-[12px] font-bold num ${up ? "text-success" : "text-danger"} inline-flex items-center justify-end gap-0.5`}>
