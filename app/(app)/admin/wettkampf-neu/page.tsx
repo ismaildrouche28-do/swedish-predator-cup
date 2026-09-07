@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
-import { CreateForm, ParticipantPicker, RemoveButton, StartButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow } from "./SetupForm";
+import { CreateForm, ParticipantPicker, RemoveButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow } from "./SetupForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -140,12 +140,39 @@ export default async function SetupPage() {
         </div>
       )}
 
-      {canStart && <StartButton competitionId={comp.id} />}
-      {comp.status === "prep" && members.length < 2 && (
-        <div className="mt-4 text-center text-[12.5px] text-ink-3">Der Start-Button erscheint, sobald min. 2 Teilnehmer zugewiesen sind.</div>
+      {/* Abschluss der Konfiguration — bewusst KEIN Start-Button hier.
+          Der Wettkampf startet ausschliesslich manuell im Bereich Wettkampf steuern. */}
+      {comp.status === "prep" && (
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-cs-sm mt-3">
+          <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Konfiguration</div>
+          <div className="text-[19px] font-bold text-spc-dark mt-0.5">
+            {canStart ? "Bereit zur Steuerung" : `Noch ${2 - members.length} Teilnehmer:in fehlt`}
+          </div>
+          <p className="text-[13px] text-ink-3 mt-1 mb-3">
+            Der Wettkampf bleibt vorbereitet. <strong className="text-spc-dark">Anlegen und Konfigurieren startet den Wettkampf NICHT.</strong> Zum Starten wechselst du in den Bereich „Wettkampf steuern" und drückst dort auf <em>„Wettkampf starten"</em>.
+          </p>
+          {canStart ? (
+            <Link href={`/admin/wettkampf?id=${comp.id}`}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-spc-dark text-white font-bold text-[14.5px] hover:bg-spc-mid transition shadow-cs-sm">
+              Zur Wettkampf-Steuerung
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </Link>
+          ) : (
+            <div className="text-[12.5px] text-ink-3 italic">Weise mindestens 2 Teilnehmer:innen einem Boot zu, dann wird der Wechsel zur Steuerung freigeschaltet.</div>
+          )}
+        </div>
       )}
       {comp.status === "running" && (
-        <div className="mt-6 text-center"><FinishButton competitionId={comp.id} /></div>
+        <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-cs-sm mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-widest text-success-dark font-bold">Läuft</div>
+            <div className="text-[15px] font-bold text-spc-dark">Wettkampf ist gestartet</div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href={`/admin/wettkampf?id=${comp.id}`} className="text-[13px] font-semibold text-spc-mid hover:underline">Zur Steuerung →</Link>
+            <FinishButton competitionId={comp.id} />
+          </div>
+        </div>
       )}
     </div>
   );

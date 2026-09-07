@@ -14,17 +14,27 @@ const SPECIES: any = { perch: "Barsch", zander: "Zander", pike: "Hecht" };
 export function WettkampfSteuerung({ competitionId, status }: { competitionId: string; status: string }) {
   const [pending, start] = useTransition();
   const btn = "px-4 py-2.5 rounded-xl text-white font-bold text-[13px] disabled:opacity-50 transition";
+  const confirmStart = () => {
+    if (confirm("Wettkampf wirklich JETZT starten? Ab jetzt läuft die Wettkampfzeit.")) {
+      start(() => startCompetitionAdmin(competitionId));
+    }
+  };
   return (
     <div className="flex flex-wrap gap-2">
       {status === "prep" && (
-        <button onClick={() => start(() => startCompetitionAdmin(competitionId))} disabled={pending}
-          className={`${btn} bg-success hover:bg-success/90`}>▶ Wettkampf starten</button>
+        <div className="w-full">
+          <div className="mb-2 text-[13px] text-ink-2">
+            Der Wettkampf ist <strong className="text-spc-dark">vorbereitet</strong>. Klick unten, um ihn manuell zu starten.
+          </div>
+          <button onClick={confirmStart} disabled={pending}
+            className={`${btn} bg-success hover:bg-success/90 text-[14px] py-3`}>▶ Wettkampf starten</button>
+        </div>
       )}
       {status === "running" && (
         <>
           <button onClick={() => start(() => pauseCompetitionAdmin(competitionId))} disabled={pending}
             className={`${btn} bg-warn hover:bg-warn/90`}>⏸ Pausieren</button>
-          <button onClick={() => start(() => finishCompetitionAdmin(competitionId))} disabled={pending}
+          <button onClick={() => { if (confirm("Wettkampf beenden?")) start(() => finishCompetitionAdmin(competitionId)); }} disabled={pending}
             className={`${btn} bg-danger hover:bg-danger/90`}>⏹ Beenden</button>
         </>
       )}
@@ -32,12 +42,12 @@ export function WettkampfSteuerung({ competitionId, status }: { competitionId: s
         <>
           <button onClick={() => start(() => resumeCompetitionAdmin(competitionId))} disabled={pending}
             className={`${btn} bg-success hover:bg-success/90`}>▶ Fortsetzen</button>
-          <button onClick={() => start(() => finishCompetitionAdmin(competitionId))} disabled={pending}
+          <button onClick={() => { if (confirm("Wettkampf beenden?")) start(() => finishCompetitionAdmin(competitionId)); }} disabled={pending}
             className={`${btn} bg-danger hover:bg-danger/90`}>⏹ Beenden</button>
         </>
       )}
       {status === "finished" && (
-        <div className="text-[13px] text-ink-3">Wettkampf ist beendet. Neuen Wettkampf im Setup anlegen.</div>
+        <div className="text-[13px] text-ink-3">Wettkampf ist beendet. Neuen Wettkampf in „Wettkampf aufbauen" anlegen.</div>
       )}
     </div>
   );
