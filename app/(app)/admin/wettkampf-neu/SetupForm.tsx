@@ -222,29 +222,33 @@ export function ParticipantPicker({ availableUsers, boats }: { availableUsers: a
       <p className="text-[12.5px] text-ink-3 mb-3">Boot wählen und auf „<strong className="text-spc-dark">Hinzufügen</strong>" klicken.</p>
       <div className="flex flex-col gap-2">
         {availableUsers.map(u => (
-          <div key={u.id}
-            className="grid gap-2 items-center bg-spc-greyLight rounded-2xl p-3"
-            style={{ gridTemplateColumns: "40px minmax(120px,1fr) 110px 130px" }}>
-            <div className="w-10 h-10 rounded-full bg-spc-mid text-white flex items-center justify-center text-[14px] font-bold">
-              {(u.nickname ?? u.name ?? "?").slice(0, 1).toUpperCase()}
+          <div key={u.id} className="bg-spc-greyLight rounded-2xl p-3">
+            {/* Kopf: Avatar + Name — immer sichtbar */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-spc-mid text-white flex items-center justify-center text-[14px] font-bold shrink-0">
+                {(u.nickname ?? u.name ?? "?").slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[14.5px] font-semibold text-spc-dark truncate">{u.nickname ?? u.name}</div>
+                {u.email && <div className="text-[11.5px] text-ink-3 truncate">{u.email}</div>}
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="text-[14.5px] font-semibold text-spc-dark truncate">{u.nickname ?? u.name}</div>
-              <div className="text-[11.5px] text-ink-3 truncate">{u.email}</div>
+            {/* Aktionen: Boot + Button — mobil unter dem Namen, ab sm nebeneinander */}
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2 items-center">
+              <select
+                value={boatByUser[u.id] ?? boats[0]?.id ?? ""}
+                onChange={(e) => setBoatByUser(prev => ({ ...prev, [u.id]: e.target.value }))}
+                className="w-full min-w-0 px-2 py-2 rounded-lg bg-white text-[13px] font-semibold text-spc-dark border border-black/[0.12] outline-none focus:border-spc-mid">
+                {boats.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
+              </select>
+              <button
+                onClick={() => add(u.id)}
+                disabled={pending}
+                type="button"
+                className="px-4 py-2 rounded-lg bg-spc-dark text-white text-[13px] font-bold disabled:opacity-50 hover:bg-spc-mid transition whitespace-nowrap">
+                {pending ? "…" : "Hinzufügen"}
+              </button>
             </div>
-            <select
-              value={boatByUser[u.id] ?? boats[0]?.id ?? ""}
-              onChange={(e) => setBoatByUser(prev => ({ ...prev, [u.id]: e.target.value }))}
-              className="w-full px-2 py-2 rounded-lg bg-white text-[13px] font-semibold text-spc-dark border border-black/[0.12] outline-none focus:border-spc-mid">
-              {boats.map(b => <option key={b.id} value={b.id}>{b.label}</option>)}
-            </select>
-            <button
-              onClick={() => add(u.id)}
-              disabled={pending}
-              type="button"
-              className="w-full px-3 py-2 rounded-lg bg-spc-dark text-white text-[13px] font-bold disabled:opacity-50 hover:bg-spc-mid transition">
-              {pending ? "…" : "Hinzufügen"}
-            </button>
           </div>
         ))}
       </div>
@@ -326,7 +330,7 @@ export function ManualCallForm({ competitionId, boats, participants }: {
       const r = await createCallManual(competitionId, toIsoFormData(fd));
       if (r?.error) setMsg({ t: "err", m: r.error });
       else setMsg({ t: "ok", m: "Call angelegt." });
-    })} className="grid gap-2 sm:grid-cols-[130px_1fr_140px_140px_120px_auto] items-end bg-spc-greyLight rounded-2xl p-3">
+    })} className="grid grid-cols-1 sm:grid-cols-[130px_minmax(0,1fr)_140px_140px_120px_auto] gap-2 sm:items-end bg-spc-greyLight rounded-2xl p-3">
       <label className="block">
         <span className="block text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-1">Boot</span>
         <select name="boat_id" value={boatId} onChange={(e) => setBoatId(e.target.value)}
@@ -390,7 +394,7 @@ export function CallRow({ call, participants }: {
           if (r?.error) { setErr(r.error); return; }
           setEditing(false);
         })}
-        className="grid gap-2 sm:grid-cols-[1fr_140px_140px_120px_auto] items-end bg-spc-lighter/40 rounded-xl p-3">
+        className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_140px_140px_120px_auto] gap-2 sm:items-end bg-spc-lighter/40 rounded-xl p-3">
         <label className="block">
           <span className="block text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-1">Teilnehmer</span>
           <select name="user_id" defaultValue={call.user_id} required
@@ -429,13 +433,13 @@ export function CallRow({ call, participants }: {
   }
 
   return (
-    <div className="grid grid-cols-[110px_1fr_auto_auto] gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2 text-[13px]">
+    <div className="grid grid-cols-[92px_minmax(0,1fr)_auto_auto] sm:grid-cols-[110px_1fr_auto_auto] gap-2 sm:gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2 text-[12.5px] sm:text-[13px]">
       <div className="num font-semibold text-spc-dark">
         {new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–{new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
       </div>
-      <div>
-        <strong className="font-semibold text-[14px]">{currentUser?.label ?? "?"}</strong>
-        <span className="ml-1.5 text-[11.5px] text-ink-3">{CALL_LABEL[call.call_type] ?? call.call_type}</span>
+      <div className="min-w-0">
+        <strong className="font-semibold text-[13.5px] sm:text-[14px] truncate block">{currentUser?.label ?? "?"}</strong>
+        <span className="text-[11.5px] text-ink-3">{CALL_LABEL[call.call_type] ?? call.call_type}</span>
       </div>
       <button onClick={() => setEditing(true)} className="w-8 h-8 rounded-lg bg-white text-spc-mid text-[13px] hover:bg-spc-lighter/40" title="Bearbeiten">✎</button>
       <button onClick={() => { if (confirm("Call löschen?")) start(async () => { await deleteCallManual(call.id); }); }} disabled={pending}

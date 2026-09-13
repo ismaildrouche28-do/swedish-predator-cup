@@ -147,7 +147,7 @@ export function PenaltyForm({ competitionId, users }: { competitionId: string; u
         if (r?.error) setMsg({ t: "err", m: r.error });
         else setMsg({ t: "ok", m: "Strafe erfasst." });
       })}
-      className="grid gap-2 sm:grid-cols-[1fr_150px_auto] bg-spc-greyLight rounded-2xl p-3 items-center">
+      className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_150px_auto] gap-2 bg-spc-greyLight rounded-2xl p-3 sm:items-center">
       <select name="user_id" required
         className="w-full px-3 py-2.5 rounded-xl bg-white text-[13.5px] font-semibold border border-black/[0.10] outline-none focus:border-spc-mid">
         <option value="">Teilnehmer wählen…</option>
@@ -205,7 +205,7 @@ export function PauseWindow({ competitionId, pauseStart, pauseEnd }: { competiti
           if (r?.error) setMsg({ t: "err", m: r.error });
           else setMsg({ t: "ok", m: "Pausen-Ende aktualisiert." });
         })}
-        className="grid gap-2 sm:grid-cols-[1fr_auto] items-end">
+        className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-2 sm:items-end">
         <label className="block bg-spc-greyLight rounded-xl p-3">
           <span className="block text-[11px] text-ink-3 font-bold mb-1 uppercase tracking-widest">Neues Pausen-Ende</span>
           <input type="datetime-local" name="pause_end" defaultValue={toLocalInput(pauseEnd)} required

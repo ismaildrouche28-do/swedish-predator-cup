@@ -28,22 +28,22 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
 
   return (
     <>
-      <div className="bg-white rounded-3xl p-5 shadow-cs-sm">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-cs-sm">
         <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-3">Fischart</div>
-        <div className="grid grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
           {SPECIES.map(s => {
             const selected = species === s.key;
             return (
               <button key={s.key} type="button" onClick={() => setSpecies(s.key)}
-                className={`relative rounded-2xl overflow-hidden border-2 text-center transition group ${
+                className={`relative rounded-2xl overflow-hidden border-2 text-center transition group min-w-0 ${
                   selected ? "border-spc-mid ring-2 ring-spc-mid/25" : "border-transparent hover:border-spc-light/60"
                 }`}>
                 <div className={`relative aspect-[5/3] flex items-center justify-center transition ${selected ? "bg-spc-lighter/50" : "bg-spc-greyLight group-hover:bg-spc-lighter/30"}`}>
                   <FishPhoto species={s.key} className="max-w-[92%] max-h-[92%] object-contain drop-shadow-sm" />
                 </div>
                 <div className={`py-2 px-1 ${selected ? "bg-spc-lighter" : "bg-white"}`}>
-                  <div className="text-[15.5px] font-bold text-spc-dark">{s.label}</div>
-                  <div className="text-[11px] text-ink-3 mt-0.5">min {s.min} · ×{s.factor}</div>
+                  <div className="text-[13.5px] sm:text-[15.5px] font-bold text-spc-dark truncate">{s.label}</div>
+                  <div className="text-[10.5px] sm:text-[11px] text-ink-3 mt-0.5 truncate">min {s.min} · ×{s.factor}</div>
                 </div>
                 {selected && (
                   <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-spc-mid text-white flex items-center justify-center text-[13px] font-bold shadow-md">✓</div>
@@ -53,12 +53,12 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
           })}
         </div>
 
-        <div className="flex items-baseline gap-3 bg-spc-greyLight rounded-2xl px-5 py-4 mb-2">
-          <span className="text-[12px] uppercase tracking-widest text-ink-3 font-bold w-[80px]">Länge</span>
+        <div className="flex items-baseline gap-2 sm:gap-3 bg-spc-greyLight rounded-2xl px-4 sm:px-5 py-4 mb-2">
+          <span className="text-[12px] uppercase tracking-widest text-ink-3 font-bold shrink-0">Länge</span>
           <input type="text" inputMode="numeric" value={length} placeholder="0"
             onChange={(e) => setLength(e.target.value.replace(/\D/g, ""))}
-            className="flex-1 bg-transparent outline-none text-right text-[32px] font-bold num text-spc-dark placeholder:text-ink-4" />
-          <span className="text-[17px] text-ink-3 font-medium">cm</span>
+            className="flex-1 min-w-0 bg-transparent outline-none text-right text-[28px] sm:text-[32px] font-bold num text-spc-dark placeholder:text-ink-4" />
+          <span className="text-[15px] sm:text-[17px] text-ink-3 font-medium shrink-0">cm</span>
         </div>
 
         <button type="button" onClick={() => setTopwater(!topwater)}
