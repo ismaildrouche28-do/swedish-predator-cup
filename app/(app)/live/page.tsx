@@ -266,26 +266,40 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
     );
   }
 
-  // Pro User: kumulative Punkte-Reihe entlang gemeinsamer Zeitachse [tMin..tMax]
-  const series = new Map<string, { t: number; p: number }[]>();
+  // Pro User: kumulative Punkte-Reihe entlang gemeinsamer Zeitachse [tMin..tMax].
+  // WICHTIG: Linie startet AM ERSTEN FANG des jeweiligen Users (nicht bei 0/tMin) —
+  // sonst gibt es unnatuerliche fast-vertikale Spruenge am Anfang.
+  const raw = new Map<string, { t: number; p: number }[]>();
   const cumul: any = {};
   const sorted = [...catches].sort((a, b) => +new Date(a.caught_at) - +new Date(b.caught_at));
   const tMin = new Date(sorted[0].caught_at).getTime();
   const tMax = new Date(sorted[sorted.length - 1].caught_at).getTime();
   for (const c of sorted) {
-    // Admin ausschließen
     if (usersById.get(c.user_id)?.is_admin) continue;
     cumul[c.user_id] = (cumul[c.user_id] ?? 0) + c.total_points;
-    if (!series.has(c.user_id)) {
-      // Startpunkt bei tMin auf 0, damit die Linie von links losläuft
-      series.set(c.user_id, [{ t: tMin, p: 0 }]);
-    }
-    series.get(c.user_id)!.push({ t: new Date(c.caught_at).getTime(), p: cumul[c.user_id] });
+    if (!raw.has(c.user_id)) raw.set(c.user_id, []);
+    raw.get(c.user_id)!.push({ t: new Date(c.caught_at).getTime(), p: cumul[c.user_id] });
   }
-  // Alle Reihen bis tMax verlängern (Punktestand hält an) — damit alle parallel bis rechts laufen
-  for (const [uid, pts] of series) {
+  // Punktestand nach dem letzten Fang bis rechts halten → alle Kurven enden buendig
+  for (const [uid, pts] of raw) {
     const last = pts[pts.length - 1];
     if (last.t < tMax) pts.push({ t: tMax, p: last.p });
+  }
+  // In Step-After-Reihe wandeln: zwischen zwei Faengen bleibt der Punktestand konstant,
+  // beim Fang selbst springt er hoch. Das ist die ehrliche Darstellung der Punkte-Entwicklung.
+  const series = new Map<string, { t: number; p: number }[]>();
+  for (const [uid, pts] of raw) {
+    const stepped: { t: number; p: number }[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (i === 0) {
+        stepped.push(pts[i]);
+      } else {
+        // Horizontal zum neuen Zeitpunkt auf altem Wert, dann Sprung hoch
+        stepped.push({ t: pts[i].t, p: pts[i - 1].p });
+        stepped.push(pts[i]);
+      }
+    }
+    series.set(uid, stepped);
   }
 
   const maxP = Math.max(1, ...Object.values(cumul) as number[]);
@@ -348,20 +362,28 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
           {new Date(tMax).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
         </text>
 
-        {/* Reihen pro User */}
+        {/* Reihen pro User — Step-After-Polylinie: ehrliche Darstellung, keine Bezier-Ueberschwinger */}
         {participants.map((r: any, i: number) => {
           const s = series.get(r.user_id);
           if (!s || s.length === 0) return null;
-          const smooth = smoothPath(s.map(pt => [x(pt.t), y(pt.p)] as [number, number]));
-          const areaPath = `${smooth} L ${x(s[s.length - 1].t).toFixed(1)} ${padT + ih} L ${x(s[0].t).toFixed(1)} ${padT + ih} Z`;
+          const line = s.map((pt, idx) => `${idx === 0 ? "M" : "L"} ${x(pt.t).toFixed(1)} ${y(pt.p).toFixed(1)}`).join(" ");
+          const firstX = x(s[0].t).toFixed(1);
+          const lastX = x(s[s.length - 1].t).toFixed(1);
+          const baseY = padT + ih;
+          const areaPath = `${line} L ${lastX} ${baseY} L ${firstX} ${baseY} Z`;
           const isLeader = i === 0;
+          const color = COLORS[i % COLORS.length];
+          // Marker auf dem ERSTEN Fang (Einstiegspunkt) und dem AKTUELLEN Stand
+          const raws = raw.get(r.user_id)!;
+          const firstReal = raws[0];
+          const lastReal = raws[raws.length - 1];
           return (
             <g key={r.user_id}>
               <path d={areaPath} fill={`url(#rk-${r.user_id})`} opacity={isLeader ? 1 : 0.5} />
-              <path d={smooth} stroke={COLORS[i % COLORS.length]} strokeWidth={isLeader ? 2.6 : 2} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={isLeader ? 1 : 0.75} />
-              {/* Punkte-Marker nur auf letztem Punkt */}
-              <circle cx={x(s[s.length - 1].t)} cy={y(s[s.length - 1].p)} r={isLeader ? 5 : 4}
-                fill={COLORS[i % COLORS.length]} stroke="#ffffff" strokeWidth="2" />
+              <path d={line} stroke={color} strokeWidth={isLeader ? 2.6 : 2} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={isLeader ? 1 : 0.8} />
+              <circle cx={x(firstReal.t)} cy={y(firstReal.p)} r={2.5} fill={color} opacity={0.8} />
+              <circle cx={x(lastReal.t)} cy={y(lastReal.p)} r={isLeader ? 5 : 4}
+                fill={color} stroke="#ffffff" strokeWidth="2" />
             </g>
           );
         })}
@@ -370,19 +392,6 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
   );
 }
 
-// Sanfte Bezier-Kurve durch die Punkte
-function smoothPath(points: [number, number][]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
-  const d: string[] = [`M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`];
-  for (let i = 1; i < points.length; i++) {
-    const [x0, y0] = points[i - 1];
-    const [x1, y1] = points[i];
-    const cx = (x0 + x1) / 2;
-    d.push(`C ${cx.toFixed(1)} ${y0.toFixed(1)} ${cx.toFixed(1)} ${y1.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`);
-  }
-  return d.join(" ");
-}
 
 function NoComp() {
   return <div className="bg-white rounded-3xl p-10 text-center shadow-cs-sm"><div className="text-5xl mb-3">📊</div><div className="text-[20px] font-bold text-spc-dark mb-2">Noch kein Wettkampf</div><p className="text-ink-3 text-[14px]">Sobald der erste SPC läuft, siehst du hier die Live-Rangliste.</p></div>;
