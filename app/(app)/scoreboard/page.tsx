@@ -25,7 +25,16 @@ export default async function ScoreboardPage() {
 
   const scored = catches.filter((c: any) => c.is_scored).sort((a: any, b: any) => b.total_points - a.total_points);
   const unscored = catches.filter((c: any) => !c.is_scored);
-  const weakest = scored[scored.length - 1];
+  // Schwaechster Fang nur wenn: >= 2 gewertete Faenge UND eindeutiges Minimum
+  // (Punktegleichstand am unteren Ende → kein einzelner "schwaechster Fang").
+  let weakest: any = null;
+  if (scored.length >= 2) {
+    const lowest = scored[scored.length - 1];
+    const secondLowest = scored[scored.length - 2];
+    if ((lowest?.total_points ?? 0) !== (secondLowest?.total_points ?? 0)) {
+      weakest = lowest;
+    }
+  }
 
   const speciesCounts = { perch: 0, zander: 0, pike: 0 } as any;
   for (const c of scored) speciesCounts[c.species]++;
