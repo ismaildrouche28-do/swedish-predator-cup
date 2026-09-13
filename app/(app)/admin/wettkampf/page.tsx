@@ -65,7 +65,10 @@ export default async function EditWettkampf({ searchParams }: { searchParams: { 
         <WettkampfSteuerung competitionId={comp.id} status={comp.status} />
       </div>
 
-      {/* Pause-Fenster */}
+      {/* Geplante Zeiten (Read-only Zusammenfassung der bereits im Setup erfassten Werte) */}
+      <PlannedTimesCard comp={comp} competitionCalls={await getCallsSummary(comp.id)} />
+
+      {/* Pause-Fenster (Pausen-Ende live anpassbar) */}
       <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
         <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Pause / Timeout</div>
         <div className="text-[19px] font-bold text-spc-dark mt-0.5 mb-3">Pausenzeit steuern</div>
@@ -117,6 +120,120 @@ export default async function EditWettkampf({ searchParams }: { searchParams: { 
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Alle vorhandenen Calls fuer die Uebersicht laden (inkl. Nickname und Boot-Label).
+// Nur Lese-Query — keine Aenderung an der Wettkampfsteuerungslogik.
+async function getCallsSummary(competitionId: string) {
+  const { data } = await supabaseAdmin
+    .from("calls")
+    .select("id, start_at, end_at, call_type, user_id, boat_id, users(name, nickname), boats(label)")
+    .eq("competition_id", competitionId)
+    .order("start_at");
+  return data ?? [];
+}
+
+// Read-only Karte mit ALLEN bereits im Wettkampf hinterlegten geplanten Zeiten:
+// Angelstart, Angelende, Gesamtdauer, Pause, Call-Ueberblick pro Boot.
+// Nichts hier ist editierbar — bearbeiten passiert weiterhin im Setup bzw. via
+// „Konfiguration bearbeiten" / PauseWindow oben.
+function PlannedTimesCard({ comp, competitionCalls }: { comp: any; competitionCalls: any[] }) {
+  const TZ = "Europe/Berlin";
+  const fmtT  = (v: any) => v ? new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: TZ }) : "—";
+  const fmtDT = (v: any) => v ? new Date(v).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: TZ }) : "—";
+  const fmtDate = (v: any) => v ? new Date(v).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", timeZone: TZ }) : "—";
+  const fmtDur = (ms: number) => {
+    const min = Math.max(0, Math.round(ms / 60000));
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  };
+
+  const startMs = comp.start_at ? +new Date(comp.start_at) : null;
+  const endMs   = comp.end_at   ? +new Date(comp.end_at)   : null;
+  const pStart  = comp.pause_start ? +new Date(comp.pause_start) : null;
+  const pEnd    = comp.pause_end   ? +new Date(comp.pause_end)   : null;
+  const totalMs = (startMs != null && endMs != null && endMs > startMs) ? endMs - startMs : 0;
+  const pauseMs = (pStart != null && pEnd != null && pEnd > pStart) ? pEnd - pStart : 0;
+  const effMs   = Math.max(0, totalMs - pauseMs);
+
+  const CALL_LABEL: any = { morning: "Morning Call", mid: "Mid Call", late: "Late Call" };
+  // Calls pro Boot gruppieren
+  const byBoat = new Map<string, { label: string; rows: any[] }>();
+  for (const c of competitionCalls) {
+    const b = c.boat_id;
+    const label = (c as any).boats?.label ?? "Boot";
+    if (!byBoat.has(b)) byBoat.set(b, { label, rows: [] });
+    byBoat.get(b)!.rows.push(c);
+  }
+
+  return (
+    <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
+      <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">Geplante Wettkampfzeiten</div>
+      <div className="text-[19px] font-bold text-spc-dark mt-0.5 mb-1">Alle vorgesehenen Zeiten im Überblick</div>
+      <p className="text-[12.5px] text-ink-3 mb-3">
+        Bereits im Setup hinterlegt. Bearbeiten unter <em>„Konfiguration bearbeiten"</em>. Die Pause kann unten separat verlängert werden.
+      </p>
+
+      {/* Basis-Fakten */}
+      <div className="grid sm:grid-cols-2 gap-2 mb-3">
+        <SummaryPill label="Datum">{fmtDate(comp.start_at)}</SummaryPill>
+        <SummaryPill label="Ort">{comp.location ?? "—"}</SummaryPill>
+        <SummaryPill label="Angelstart">{fmtT(comp.start_at)} Uhr</SummaryPill>
+        <SummaryPill label="Angelende">{fmtT(comp.end_at)} Uhr</SummaryPill>
+        <SummaryPill label="Pause ab">{comp.pause_start ? `${fmtT(comp.pause_start)} Uhr` : "keine Pause"}</SummaryPill>
+        <SummaryPill label="Pause bis">{comp.pause_end ? `${fmtT(comp.pause_end)} Uhr` : "—"}</SummaryPill>
+        <SummaryPill label="Wettkampf-Gesamtdauer">{totalMs > 0 ? fmtDur(totalMs) : "—"}</SummaryPill>
+        <SummaryPill label="Effektive Call-Zeit">{effMs > 0 ? fmtDur(effMs) : "—"}</SummaryPill>
+      </div>
+
+      {/* Manueller Start (real, falls schon gestartet) */}
+      {comp.actual_start_at && (
+        <div className="grid sm:grid-cols-2 gap-2 mb-3">
+          <SummaryPill label="Tatsächlicher Start">{fmtDT(comp.actual_start_at)} Uhr</SummaryPill>
+          {comp.paused_at && <SummaryPill label="Aktuell pausiert seit">{fmtDT(comp.paused_at)} Uhr</SummaryPill>}
+        </div>
+      )}
+
+      {/* Calls pro Boot */}
+      {byBoat.size > 0 && (
+        <div className="mt-2">
+          <div className="text-[11px] uppercase tracking-widest text-ink-3 font-bold mb-2">Calls pro Boot</div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {Array.from(byBoat.values()).map(({ label, rows }) => (
+              <div key={label} className="bg-spc-greyLight rounded-2xl p-3">
+                <div className="text-[10px] uppercase tracking-widest text-spc-mid font-bold mb-2">{label}</div>
+                <div className="space-y-1.5">
+                  {rows.map((c: any) => {
+                    const u = c.users as any;
+                    const name = u?.nickname ?? u?.name ?? "—";
+                    return (
+                      <div key={c.id} className="flex items-center gap-2 text-[13px]">
+                        <span className="num font-semibold text-spc-dark shrink-0 min-w-[94px]">
+                          {fmtT(c.start_at)}–{fmtT(c.end_at)}
+                        </span>
+                        <span className="font-semibold text-spc-dark truncate">{name}</span>
+                        <span className="text-[11.5px] text-ink-3 ml-auto shrink-0">{CALL_LABEL[c.call_type] ?? c.call_type}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummaryPill({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-spc-greyLight rounded-xl px-3 py-2">
+      <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold">{label}</div>
+      <div className="text-[14.5px] font-bold text-spc-dark num truncate">{children}</div>
     </div>
   );
 }
