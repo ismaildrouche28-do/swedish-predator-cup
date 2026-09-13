@@ -34,7 +34,7 @@ export default async function FangPage() {
   return (
     <div>
       <section className="bg-cs-section rounded-3xl p-5 mb-4">
-        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Neuer Fang · {new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr</div>
+        <div className="text-[11px] font-bold text-spc-mid uppercase tracking-widest mb-1">Neuer Fang · {new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr</div>
         <h1 className="text-2xl sm:text-3xl font-bold text-spc-dark tracking-tight">Fang erfassen</h1>
         <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">So wenige Eingaben wie möglich. Punkte, Bonus und Slot-Zuordnung rechnet das System.</p>
       </section>

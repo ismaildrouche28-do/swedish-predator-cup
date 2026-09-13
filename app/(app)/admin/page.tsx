@@ -97,7 +97,7 @@ export default async function AdminPage() {
             <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest ${STATUS_STYLE[focusComp.status]}`}>{STATUS_LABEL[focusComp.status]}</span>
           </div>
           <div className="text-[13px] text-ink-3 mt-0.5">
-            {focusComp.location ?? "—"} · {focusComp.start_at ? new Date(focusComp.start_at).toLocaleString("de-DE") : "—"}
+            {focusComp.location ?? "—"} · {focusComp.start_at ? new Date(focusComp.start_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) : "—"}
           </div>
         </div>
       )}

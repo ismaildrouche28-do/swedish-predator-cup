@@ -79,7 +79,7 @@ export default async function ScoreboardPage() {
                     {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                   </div>
                   <div className="text-[12.5px] text-ink-3">
-                    {new Date(c.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                    {new Date(c.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
                     {isWeak && <> · <strong className="text-danger font-bold">schwächster Fang</strong></>}
                   </div>
                 </div>

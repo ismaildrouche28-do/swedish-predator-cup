@@ -97,6 +97,8 @@ export function FangForm({ competitionId, topwaterBonus = 10, twAlreadyGiven = f
           fd.set("species", species);
           fd.set("length_cm", length);
           fd.set("topwater", topwater ? "1" : "0");
+          // Echter Zeitstempel im Moment des Absendens (Browser-Uhr, ISO-UTC)
+          fd.set("caught_at", new Date().toISOString());
           const r = await saveCatch(fd);
           if (r?.error) { setErr(r.error); return; }
           if (r?.improved) {

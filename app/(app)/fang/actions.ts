@@ -9,6 +9,14 @@ export async function saveCatch(formData: FormData): Promise<{ error?: string; o
   const species = String(formData.get("species") ?? "") as "perch" | "zander" | "pike";
   const length_cm = parseInt(String(formData.get("length_cm") ?? "0"));
   const topwater = formData.get("topwater") === "1";
+  // Client sendet den exakten Zeitpunkt der Erfassung als ISO-UTC — damit ist die
+  // Fangzeit ein echter Zeitstempel vom Moment des Sende-Klicks, unabhaengig von
+  // Netzlatenz oder DB-Trigger-Delay.
+  const clientCaughtAt = String(formData.get("caught_at") ?? "").trim();
+  const caught_at = clientCaughtAt && !isNaN(+new Date(clientCaughtAt))
+    ? new Date(clientCaughtAt).toISOString()
+    : new Date().toISOString(); // Fallback: Serverzeit jetzt (ebenfalls UTC-ISO)
+
   if (!competition_id || !species || !length_cm) return { error: "Alle Felder ausfüllen" };
 
   // Punkte VOR dem Insert
@@ -16,7 +24,7 @@ export async function saveCatch(formData: FormData): Promise<{ error?: string; o
   const pointsBefore = rankBefore?.points ?? 0;
 
   const { data: inserted, error } = await supabaseAdmin.from("catches").insert({
-    competition_id, user_id: user.id, species, length_cm, topwater,
+    competition_id, user_id: user.id, species, length_cm, topwater, caught_at,
   }).select("id").single();
   if (error) return { error: error.message };
 

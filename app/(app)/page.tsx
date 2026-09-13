@@ -86,7 +86,7 @@ export default async function Dashboard() {
               lengthCm={topFish.length_cm}
               points={topFish.total_points}
               userName={usersById.get(topFish.user_id)?.name ?? usersById.get(topFish.user_id)?.nickname ?? "—"}
-              timeStr={new Date(topFish.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+              timeStr={new Date(topFish.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
               extra={topFish.topwater ? "Topwater" : undefined}
               accentGold
             />
@@ -98,7 +98,7 @@ export default async function Dashboard() {
               lengthCm={lastCatch.length_cm}
               points={lastCatch.total_points}
               userName={usersById.get(lastCatch.user_id)?.name ?? usersById.get(lastCatch.user_id)?.nickname ?? "—"}
-              timeStr={new Date(lastCatch.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+              timeStr={new Date(lastCatch.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
               extra={lastCatch.topwater ? "Topwater" : undefined}
             />
           )}
@@ -157,7 +157,7 @@ export default async function Dashboard() {
                               {u?.nickname ?? u?.name ?? "?"}
                             </Link>
                             {" · "}
-                            {new Date(c.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+                            {new Date(c.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
                           </div>
                         </div>
                         <div className={`text-[18px] font-bold num ${!c.is_valid ? "text-danger" : c.is_scored ? "text-ink" : "text-ink-3"}`}>
@@ -187,7 +187,7 @@ export default async function Dashboard() {
             <div className="space-y-1.5">
               {upcoming.map((c: any) => (
                 <div key={c.id} className="grid grid-cols-[70px_1fr_auto] gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2 text-[13px]">
-                  <div className="num font-semibold text-spc-dark">{new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</div>
+                  <div className="num font-semibold text-spc-dark">{new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}</div>
                   <div>
                     <strong className="font-semibold text-[14px]">{c.users?.nickname ?? c.users?.name}</strong>
                     <span className="block text-[11.5px] text-ink-3">{({morning:"Morning",mid:"Mid",late:"Late"} as any)[c.call_type]}</span>
@@ -209,7 +209,7 @@ function CallCard({ call, isMine }: { call: any; isMine: boolean }) {
   const now = Date.now();
   const progress = Math.max(0, Math.min(1, (now - start) / (end - start)));
   const label = ({ morning: "Morning Call", mid: "Mid Call", late: "Late Call" } as any)[call.call_type];
-  const timeRange = `${new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} – ${new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`;
+  const timeRange = `${new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} – ${new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}`;
 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-cs-sm mb-4">

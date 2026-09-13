@@ -123,7 +123,7 @@ export function CatchEditor({ c, userName }: { c: any; userName: string }) {
           {c.is_scored && <span className="ml-1.5 inline-block bg-spc-mid/15 text-spc-mid text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Gewertet</span>}
         </div>
         <div className="text-[11.5px] text-ink-3">
-          {userName} · {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {c.total_points} Pkt
+          {userName} · {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} · {c.total_points} Pkt
         </div>
       </div>
       <div className="flex gap-1">
@@ -185,7 +185,7 @@ export function PauseWindow({ competitionId, pauseStart, pauseEnd }: { competiti
   const [msg, setMsg] = useState<{ t: "ok" | "err"; m: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  const fmt = (v: string | null) => v && mounted ? new Date(v).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  const fmt = (v: string | null) => v && mounted ? new Date(v).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) : "—";
   return (
     <div>
       <div className="grid sm:grid-cols-2 gap-2 mb-3">

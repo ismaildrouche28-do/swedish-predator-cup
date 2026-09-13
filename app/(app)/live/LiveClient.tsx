@@ -50,8 +50,8 @@ export function LiveClock(props: ClockProps) {
   // Volle geplante Fischzeit — die läuft nach Start herunter.
   const fullFishingMs = Math.max(0, (plannedEndMs - plannedStartMs) - plannedPauseMs);
 
-  const plannedWindow = `${new Date(startAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–${new Date(endAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` +
-    (plannedPauseMs > 0 ? ` · Pause ${new Date(plannedPauseStartMs!).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–${new Date(plannedPauseEndMs!).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}` : "");
+  const plannedWindow = `${new Date(startAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}–${new Date(endAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}` +
+    (plannedPauseMs > 0 ? ` · Pause ${new Date(plannedPauseStartMs!).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}–${new Date(plannedPauseEndMs!).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}` : "");
 
   // Ohne manuellen Start: kein Countdown.
   const actualStartMs = actualStartAt ? new Date(actualStartAt).getTime() : null;

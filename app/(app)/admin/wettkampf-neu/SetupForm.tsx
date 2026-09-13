@@ -98,10 +98,10 @@ export function WettkampfzeitForm({ comp }: { comp: any }) {
   useEffect(() => setMounted(true), []);
 
   const fmtDate = (v: string | null | undefined) => v
-    ? new Date(v).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })
+    ? new Date(v).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" })
     : "—";
   const fmtTime = (v: string | null | undefined) => v
-    ? new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+    ? new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })
     : "—";
   const showTime = (v: string | null | undefined) => mounted ? fmtTime(v) : "…";
   const showDate = (v: string | null | undefined) => mounted ? fmtDate(v) : "…";
@@ -377,7 +377,7 @@ export function ManualCallForm({ competitionId, boats, participants }: {
 // Pause-Zeile: markiert klar sichtbar den Timeout im Call-Plan.
 // Wird niemals ueber einen Call gelegt, sondern zwischen die Calls einsortiert.
 export function PauseRow({ startAt, endAt }: { startAt: string; endAt: string }) {
-  const fmtTime = (v: string) => new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const fmtTime = (v: string) => new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
   const min = Math.max(0, Math.round((+new Date(endAt) - +new Date(startAt)) / 60000));
   return (
     <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-spc-gold/15 border border-dashed border-spc-gold/40">
@@ -454,7 +454,7 @@ export function CallRow({ call, participants, isContinuation }: {
   return (
     <div className={`grid grid-cols-[92px_minmax(0,1fr)_auto_auto] sm:grid-cols-[110px_1fr_auto_auto] gap-2 sm:gap-3 items-center rounded-xl px-3 py-2 text-[12.5px] sm:text-[13px] ${isContinuation ? "bg-spc-lighter/40 border-l-[3px] border-spc-mid/60" : "bg-spc-greyLight"}`}>
       <div className="num font-semibold text-spc-dark">
-        {new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–{new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+        {new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}–{new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
       </div>
       <div className="min-w-0">
         <strong className="font-semibold text-[13.5px] sm:text-[14px] truncate block">{currentUser?.label ?? "?"}</strong>

@@ -92,7 +92,7 @@ export default async function EditWettkampf({ searchParams }: { searchParams: { 
                     {p.penalty_type === "abriss" ? "Abriss" : "Handling"} · {p.users?.nickname ?? p.users?.name ?? "?"}
                   </div>
                   <div className="text-[11.5px] text-ink-3">
-                    {new Date(p.occurred_at).toLocaleString("de-DE")} · {p.penalty_type === "abriss" ? "−20 Pkt" : "10 Min Sperre"}
+                    {new Date(p.occurred_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} · {p.penalty_type === "abriss" ? "−20 Pkt" : "10 Min Sperre"}
                   </div>
                 </div>
                 <DeletePenaltyButton id={p.id} />

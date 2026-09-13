@@ -53,7 +53,7 @@ export default async function LivePage() {
     const info = byBoat.get(c.boat_id);
     if (info && !info.nextUser) {
       info.nextUser = c.users?.nickname ?? c.users?.name ?? "—";
-      info.nextTime = new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      info.nextTime = new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
     }
   }
 
@@ -139,7 +139,7 @@ export default async function LivePage() {
                   {r.nickname ?? r.display_name} {r.user_id === user.id && <span className="text-ink-3 font-normal text-[12.5px]">(Du)</span>}
                 </div>
                 <div className="text-[11.5px] text-ink-3 truncate">
-                  {r.last_catch_at ? new Date(r.last_catch_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                  {r.last_catch_at ? new Date(r.last_catch_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) : "—"}
                 </div>
               </div>
               <div className={`text-right text-[20px] font-bold num ${r.user_id === user.id ? "text-spc-mid" : "text-ink"}`}>{r.points ?? 0}</div>
@@ -356,10 +356,10 @@ async function RankingChart({ competitionId, ranking, usersById }: any) {
 
         {/* X-Achse: Start- und Ende-Uhrzeit */}
         <text x={padL} y={H - 6} fontSize="9.5" fill="#8e8e93" fontWeight="500">
-          {new Date(tMin).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(tMin).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
         </text>
         <text x={W - padR} y={H - 6} fontSize="9.5" fill="#8e8e93" textAnchor="end" fontWeight="500">
-          {new Date(tMax).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(tMax).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
         </text>
 
         {/* Reihen pro User — Step-After-Polylinie: ehrliche Darstellung, keine Bezier-Ueberschwinger */}

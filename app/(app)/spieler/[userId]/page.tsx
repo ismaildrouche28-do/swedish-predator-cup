@@ -172,7 +172,7 @@ export default async function SpielerPage({ params }: { params: { userId: string
                   {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                 </div>
                 <div className="text-[12.5px] text-ink-3">
-                  {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} Uhr
+                  {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
                   {!c.is_valid && " · unter Mindestmaß"}
                   {c.is_valid && !c.is_scored && " · aus Wertung (Slot-Regel)"}
                 </div>
@@ -260,11 +260,11 @@ function PointsChart({ points }: { points: { t: number; points: number; cm: numb
       ))}
       {/* X-Achse: erster und letzter Zeitstempel */}
       <text x={padL} y={H - 4} fontSize="10" fill="#8e8e93">
-        {new Date(points[0].t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+        {new Date(points[0].t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
       </text>
       {points.length > 1 && (
         <text x={W - padR} y={H - 4} fontSize="10" fill="#8e8e93" textAnchor="end">
-          {new Date(points[points.length - 1].t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+          {new Date(points[points.length - 1].t).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
         </text>
       )}
     </svg>

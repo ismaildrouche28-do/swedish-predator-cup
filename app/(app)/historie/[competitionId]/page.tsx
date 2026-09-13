@@ -77,7 +77,7 @@ export default async function CompetitionDetail({ params }: { params: { competit
                 {topFish.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
               </div>
               <div className="text-[12.5px] text-ink-3 mt-0.5">
-                {(usersById.get(topFish.user_id)?.nickname ?? usersById.get(topFish.user_id)?.name ?? "?")} · {new Date(topFish.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} Uhr
+                {(usersById.get(topFish.user_id)?.nickname ?? usersById.get(topFish.user_id)?.name ?? "?")} · {new Date(topFish.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
               </div>
             </div>
             <div className="text-right">
@@ -132,7 +132,7 @@ export default async function CompetitionDetail({ params }: { params: { competit
                       {u?.nickname ?? u?.name ?? "?"}
                     </Link>
                     {" · "}
-                    {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} Uhr
+                    {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
                   </div>
                 </div>
                 <div className={`text-right text-[18px] font-bold num ${!c.is_valid ? "text-danger line-through" : c.is_scored ? "text-ink" : "text-ink-3"}`}>{c.total_points}</div>
@@ -155,7 +155,7 @@ export default async function CompetitionDetail({ params }: { params: { competit
                     {p.penalty_type === "abriss" ? "Abriss" : "Falsches Handling"}
                   </div>
                   <div className="text-[12px] text-ink-3">
-                    {p.users?.nickname ?? p.users?.name ?? "?"} · {new Date(p.occurred_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} Uhr
+                    {p.users?.nickname ?? p.users?.name ?? "?"} · {new Date(p.occurred_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
                   </div>
                 </div>
                 <div className="text-right text-[16px] font-bold num text-danger">
