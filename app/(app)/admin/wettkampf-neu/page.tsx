@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { getPrepCompetition, getActiveCompetition, getCompetitionFull } from "@/lib/queries";
 import { supabaseAdmin } from "@/lib/supabase";
-import { CreateForm, ParticipantPicker, RemoveButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow } from "./SetupForm";
+import { CreateForm, ParticipantPicker, RemoveButton, FinishButton, GenerateCallsButton, WettkampfzeitForm, ManualCallForm, CallRow, PauseRow } from "./SetupForm";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -112,11 +112,25 @@ export default async function SetupPage({ searchParams }: { searchParams: { id?:
       {members.length >= 2 && (
         <div className="bg-white rounded-3xl p-5 shadow-cs-sm mb-3">
           <div className="text-[16px] font-bold text-spc-dark mb-1">Call-Planung</div>
-          <p className="text-[13px] text-ink-3 mb-3">
-            {calls.length > 0
-              ? `${calls.length} Call-Zeitfenster · verteilt auf ${boats.length} Boote · respektiert Wettkampfzeit und Pause.`
-              : "Noch keine Calls. Automatisch verteilen — die Calls orientieren sich an der eingestellten Wettkampfzeit und lassen die Pause aus."}
-          </p>
+          {(() => {
+            const totalMin = comp.start_at && comp.end_at
+              ? Math.round((+new Date(comp.end_at) - +new Date(comp.start_at)) / 60000) : 0;
+            const pauseMin = comp.pause_start && comp.pause_end
+              ? Math.round((+new Date(comp.pause_end) - +new Date(comp.pause_start)) / 60000) : 0;
+            const effMin = Math.max(0, totalMin - pauseMin);
+            const fmtDur = (m: number) => {
+              const h = Math.floor(m / 60);
+              const r = m % 60;
+              return r === 0 ? `${h} h` : `${h} h ${r} min`;
+            };
+            return effMin > 0 ? (
+              <p className="text-[13px] text-ink-3 mb-3">
+                Wettkampfzeit {fmtDur(totalMin)} − Pause {fmtDur(pauseMin)} = <strong className="text-spc-dark">{fmtDur(effMin)} verfügbare Call-Zeit</strong>, gleichmäßig pro Boot auf die Teilnehmer verteilt.
+              </p>
+            ) : (
+              <p className="text-[13px] text-ink-3 mb-3">Sobald Angelstart und Angelende gesetzt sind, wird hier die verfügbare Call-Zeit berechnet.</p>
+            );
+          })()}
 
           {/* Calls pro Boot */}
           {boats.map(b => {
@@ -131,14 +145,59 @@ export default async function SetupPage({ searchParams }: { searchParams: { id?:
               return { id: m.user_id, label: u?.nickname ?? u?.name ?? "?", boat_id: m.boat_id };
             });
             const boatCalls = calls.filter((c: any) => c.boat_id === b.id).sort((a: any, b: any) => +new Date(a.start_at) - +new Date(b.start_at));
+            // Rows aufbauen: Pause-Zeile einschieben, Fortsetzung markieren
+            const rows: Array<{ kind: "call"; call: any; isContinuation: boolean } | { kind: "pause"; startAt: string; endAt: string }> = [];
+            const pauseStartMs = comp.pause_start ? +new Date(comp.pause_start) : null;
+            const pauseEndMs = comp.pause_end ? +new Date(comp.pause_end) : null;
+            let pauseShown = false;
+            for (let i = 0; i < boatCalls.length; i++) {
+              const c = boatCalls[i];
+              const prev = boatCalls[i - 1];
+              // Pause-Zeile einschieben, wenn der Uebergang zum vorigen Call ueber die Pause geht
+              if (!pauseShown && pauseStartMs && pauseEndMs && prev
+                  && +new Date(prev.end_at) <= pauseStartMs && +new Date(c.start_at) >= pauseEndMs) {
+                rows.push({ kind: "pause", startAt: comp.pause_start!, endAt: comp.pause_end! });
+                pauseShown = true;
+              }
+              // Fortsetzung: selber User wie vorher UND vorheriger Call endete an der Pause-Grenze
+              const isContinuation = !!(prev && prev.user_id === c.user_id
+                && pauseStartMs && pauseEndMs
+                && +new Date(prev.end_at) <= pauseStartMs && +new Date(c.start_at) >= pauseEndMs);
+              rows.push({ kind: "call", call: c, isContinuation });
+            }
+            // Falls Pause NACH allen Calls liegt (Randfall) trotzdem einblenden
+            if (!pauseShown && pauseStartMs && pauseEndMs && boatCalls.length > 0) {
+              const lastEnd = +new Date(boatCalls[boatCalls.length - 1].end_at);
+              if (lastEnd >= pauseEndMs) {
+                // Pause lag mitten drin, wurde aber nicht erkannt (keine sauberen Grenzen) — nichts tun
+              }
+            }
+            const memberCount = boatParticipants.length;
+            const timePerMember = memberCount > 0
+              ? Math.round(((comp.start_at && comp.end_at
+                  ? (+new Date(comp.end_at) - +new Date(comp.start_at)) / 60000 : 0)
+                  - (comp.pause_start && comp.pause_end
+                      ? (+new Date(comp.pause_end) - +new Date(comp.pause_start)) / 60000 : 0))
+                / memberCount)
+              : 0;
+            const perMemberText = timePerMember > 0
+              ? `${memberCount} Teilnehmer · ${Math.floor(timePerMember / 60)} h ${timePerMember % 60 === 0 ? "" : (timePerMember % 60) + " min"} pro Call`
+              : `${memberCount} Teilnehmer`;
+
             return (
               <div key={b.id} className="mb-4">
-                <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold mb-1.5">{b.label}</div>
+                <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                  <div className="text-[11px] uppercase tracking-widest text-spc-mid font-bold">{b.label}</div>
+                  <div className="text-[11px] text-ink-3">{perMemberText}</div>
+                </div>
                 {boatCalls.length === 0 ? (
                   <div className="text-[12.5px] text-ink-3 italic mb-2">Noch keine Calls für dieses Boot.</div>
                 ) : (
                   <div className="space-y-1.5 mb-2">
-                    {boatCalls.map((c: any) => <CallRow key={c.id} call={c} participants={allParticipants} />)}
+                    {rows.map((row, i) => row.kind === "pause"
+                      ? <PauseRow key={`pause-${i}`} startAt={row.startAt} endAt={row.endAt} />
+                      : <CallRow key={row.call.id} call={row.call} participants={allParticipants} isContinuation={row.isContinuation} />
+                    )}
                   </div>
                 )}
                 {boatParticipants.length > 0 && (comp.status === "prep" || comp.status === "running") && (

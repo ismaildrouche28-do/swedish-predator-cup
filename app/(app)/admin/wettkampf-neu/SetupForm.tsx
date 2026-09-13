@@ -374,9 +374,28 @@ export function ManualCallForm({ competitionId, boats, participants }: {
 }
 
 // Einzelnen Call editieren/löschen
-export function CallRow({ call, participants }: {
+// Pause-Zeile: markiert klar sichtbar den Timeout im Call-Plan.
+// Wird niemals ueber einen Call gelegt, sondern zwischen die Calls einsortiert.
+export function PauseRow({ startAt, endAt }: { startAt: string; endAt: string }) {
+  const fmtTime = (v: string) => new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const min = Math.max(0, Math.round((+new Date(endAt) - +new Date(startAt)) / 60000));
+  return (
+    <div className="flex items-center gap-2 rounded-xl px-3 py-2 bg-spc-gold/15 border border-dashed border-spc-gold/40">
+      <div className="text-[11px] font-bold uppercase tracking-widest text-spc-goldDeep">Pause</div>
+      <div className="text-[13px] font-semibold text-spc-goldDeep num">
+        {fmtTime(startAt)}–{fmtTime(endAt)}
+      </div>
+      <div className="text-[11.5px] text-spc-goldDeep/80 ml-auto">
+        {min} min · keine Call-Zeit
+      </div>
+    </div>
+  );
+}
+
+export function CallRow({ call, participants, isContinuation }: {
   call: any;
   participants: { id: string; label: string; boat_id: string }[];
+  isContinuation?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -433,13 +452,16 @@ export function CallRow({ call, participants }: {
   }
 
   return (
-    <div className="grid grid-cols-[92px_minmax(0,1fr)_auto_auto] sm:grid-cols-[110px_1fr_auto_auto] gap-2 sm:gap-3 items-center bg-spc-greyLight rounded-xl px-3 py-2 text-[12.5px] sm:text-[13px]">
+    <div className={`grid grid-cols-[92px_minmax(0,1fr)_auto_auto] sm:grid-cols-[110px_1fr_auto_auto] gap-2 sm:gap-3 items-center rounded-xl px-3 py-2 text-[12.5px] sm:text-[13px] ${isContinuation ? "bg-spc-lighter/40 border-l-[3px] border-spc-mid/60" : "bg-spc-greyLight"}`}>
       <div className="num font-semibold text-spc-dark">
         {new Date(call.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}–{new Date(call.end_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
       </div>
       <div className="min-w-0">
         <strong className="font-semibold text-[13.5px] sm:text-[14px] truncate block">{currentUser?.label ?? "?"}</strong>
-        <span className="text-[11.5px] text-ink-3">{CALL_LABEL[call.call_type] ?? call.call_type}</span>
+        <span className="text-[11.5px] text-ink-3">
+          {CALL_LABEL[call.call_type] ?? call.call_type}
+          {isContinuation && <span className="ml-1.5 text-spc-mid font-semibold">· Fortsetzung nach Pause</span>}
+        </span>
       </div>
       <button onClick={() => setEditing(true)} className="w-8 h-8 rounded-lg bg-white text-spc-mid text-[13px] hover:bg-spc-lighter/40" title="Bearbeiten">✎</button>
       <button onClick={() => { if (confirm("Call löschen?")) start(async () => { await deleteCallManual(call.id); }); }} disabled={pending}
