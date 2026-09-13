@@ -119,7 +119,7 @@ export function CatchEditor({ c, userName }: { c: any; userName: string }) {
       <div>
         <div className={`text-[14px] font-bold ${c.is_valid ? "text-spc-dark" : "text-ink-3 line-through"}`}>
           {SPECIES[c.species]} {c.length_cm} cm
-          {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">TW</span>}
+          {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">TW</span>}
           {c.is_scored && <span className="ml-1.5 inline-block bg-spc-mid/15 text-spc-mid text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Gewertet</span>}
         </div>
         <div className="text-[11.5px] text-ink-3">

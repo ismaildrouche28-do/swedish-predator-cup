@@ -139,7 +139,7 @@ export default async function SpielerPage({ params }: { params: { userId: string
                     <div className="text-[24px] font-bold num mt-0.5 leading-none" style={{ color }}>{c.length_cm}<span className="text-[14px] ml-1 opacity-70">cm</span></div>
                     <div className="text-[12px] text-ink-3 mt-2">
                       {c.total_points} Punkte
-                      {c.topwater && <span className="ml-1 inline-block bg-success/15 text-success text-[9.5px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                      {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1 inline-block bg-success/15 text-success text-[9.5px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                     </div>
                   </>
                 ) : (
@@ -169,7 +169,7 @@ export default async function SpielerPage({ params }: { params: { userId: string
               <div>
                 <div className={`text-[15px] font-bold ${c.is_scored ? "text-spc-dark" : "text-ink-3 line-through"}`}>
                   {SPECIES[c.species]} {c.length_cm} cm
-                  {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                  {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                 </div>
                 <div className="text-[12.5px] text-ink-3">
                   {new Date(c.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr

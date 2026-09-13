@@ -87,7 +87,7 @@ export default async function Dashboard() {
               points={topFish.total_points}
               userName={usersById.get(topFish.user_id)?.name ?? usersById.get(topFish.user_id)?.nickname ?? "—"}
               timeStr={new Date(topFish.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
-              extra={topFish.topwater ? "Topwater" : undefined}
+              extra={topFish.topwater && (topFish.bonus_points ?? 0) > 0 ? "Topwater" : undefined}
               accentGold
             />
           )}
@@ -99,7 +99,7 @@ export default async function Dashboard() {
               points={lastCatch.total_points}
               userName={usersById.get(lastCatch.user_id)?.name ?? usersById.get(lastCatch.user_id)?.nickname ?? "—"}
               timeStr={new Date(lastCatch.caught_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })}
-              extra={lastCatch.topwater ? "Topwater" : undefined}
+              extra={lastCatch.topwater && (lastCatch.bonus_points ?? 0) > 0 ? "Topwater" : undefined}
             />
           )}
         </div>
@@ -149,7 +149,7 @@ export default async function Dashboard() {
                         <div className="min-w-0">
                           <div className={`text-[14px] font-bold ${c.is_valid ? "text-spc-dark" : "text-ink-3 line-through"}`}>
                             {SPECIES[c.species]} · {c.length_cm} cm
-                            {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                            {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                             {isTop && <span className="ml-1.5 inline-block bg-spc-gold/25 text-spc-goldDeep text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Top</span>}
                           </div>
                           <div className="text-[11.5px] text-ink-3 truncate">

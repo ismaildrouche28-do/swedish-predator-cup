@@ -74,7 +74,7 @@ export default async function CompetitionDetail({ params }: { params: { competit
               <div className="text-[10px] uppercase tracking-widest text-spc-goldDeep font-bold">🏆 Top-Fisch</div>
               <div className="text-[18px] font-bold text-spc-dark mt-0.5">
                 {SPECIES[topFish.species]} · {topFish.length_cm} cm
-                {topFish.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                {topFish.topwater && (topFish.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
               </div>
               <div className="text-[12.5px] text-ink-3 mt-0.5">
                 {(usersById.get(topFish.user_id)?.nickname ?? usersById.get(topFish.user_id)?.name ?? "?")} · {new Date(topFish.caught_at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} Uhr
@@ -122,7 +122,7 @@ export default async function CompetitionDetail({ params }: { params: { competit
                 <div>
                   <div className={`text-[14.5px] font-bold ${c.is_valid ? "text-spc-dark" : "text-ink-3 line-through"}`}>
                     {SPECIES[c.species]} · {c.length_cm} cm
-                    {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                    {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                     {isTop && <span className="ml-1.5 inline-block bg-spc-gold/25 text-spc-goldDeep text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Top-Fisch</span>}
                     {!c.is_valid && <span className="ml-1.5 inline-block bg-danger/15 text-danger text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Untermaß</span>}
                     {c.is_valid && !c.is_scored && <span className="ml-1.5 inline-block bg-ink-4/40 text-ink-3 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Nicht in Wertung</span>}

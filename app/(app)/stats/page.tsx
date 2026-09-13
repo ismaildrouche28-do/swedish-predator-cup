@@ -87,7 +87,7 @@ export default async function StatsPage() {
                   <div>
                     <div className="text-[15px] font-bold text-spc-dark">
                       {SPECIES[sp]} {c.length_cm} cm
-                      {c.topwater && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
+                      {c.topwater && (c.bonus_points ?? 0) > 0 && <span className="ml-1.5 inline-block bg-success/15 text-success text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Topwater</span>}
                     </div>
                     <div className="text-[12.5px] text-ink-3">{c.competitions?.name ?? ""}</div>
                   </div>

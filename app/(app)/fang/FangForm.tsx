@@ -63,20 +63,23 @@ export function FangForm({ competitionId, topwaterBonus = 10, twAlreadyGiven = f
           <span className="text-[15px] sm:text-[17px] text-ink-3 font-medium shrink-0">cm</span>
         </div>
 
-        <button type="button" onClick={() => setTopwater(!topwater)}
-          className="w-full flex items-center justify-between bg-spc-greyLight rounded-2xl px-5 py-4 mb-4 text-left">
-          <div>
-            <div className="text-[15px] font-bold text-spc-dark">Topwater</div>
-            <div className="text-[12px] text-ink-3">
-              {twAlreadyGiven
-                ? "Fang an der Oberfläche · Bonus bereits vergeben (+0)"
-                : `Fang an der Oberfläche · +${topwaterBonus} Bonus (einmalig)`}
-            </div>
+        {twAlreadyGiven ? (
+          <div className="w-full bg-spc-greyLight/60 rounded-2xl px-5 py-4 mb-4 text-left">
+            <div className="text-[13px] font-semibold text-ink-2">Topwater-Bonus</div>
+            <div className="text-[12px] text-ink-3 mt-0.5">Bereits einmal vergeben — für diesen Wettkampf nicht mehr auswählbar.</div>
           </div>
-          <span className={`w-[51px] h-[31px] rounded-full relative transition ${topwater ? "bg-success" : "bg-ink-4"}`}>
-            <span className={`absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-sm transition-transform ${topwater ? "translate-x-[20px]" : ""}`}/>
-          </span>
-        </button>
+        ) : (
+          <button type="button" onClick={() => setTopwater(!topwater)}
+            className="w-full flex items-center justify-between bg-spc-greyLight rounded-2xl px-5 py-4 mb-4 text-left">
+            <div>
+              <div className="text-[15px] font-bold text-spc-dark">Topwater</div>
+              <div className="text-[12px] text-ink-3">Fang an der Oberfläche · +{topwaterBonus} Bonus (einmalig pro Wettkampf)</div>
+            </div>
+            <span className={`w-[51px] h-[31px] rounded-full relative transition ${topwater ? "bg-success" : "bg-ink-4"}`}>
+              <span className={`absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-sm transition-transform ${topwater ? "translate-x-[20px]" : ""}`}/>
+            </span>
+          </button>
+        )}
 
         <div className="flex items-baseline justify-between bg-spc-lighter rounded-2xl px-5 py-4 mb-4">
           <span className="text-[11px] uppercase tracking-widest text-spc-dark font-bold">Ergibt</span>
