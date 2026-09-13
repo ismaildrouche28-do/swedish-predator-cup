@@ -4,10 +4,21 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { FangForm } from "./FangForm";
 import Link from "next/link";
 
+async function userAlreadyHasTwBonus(competitionId: string, userId: string): Promise<boolean> {
+  const { count } = await supabaseAdmin.from("catches")
+    .select("id", { count: "exact", head: true })
+    .eq("competition_id", competitionId)
+    .eq("user_id", userId)
+    .eq("topwater", true)
+    .eq("is_valid", true)
+    .gt("bonus_points", 0);
+  return (count ?? 0) > 0;
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function FangPage() {
-  await requireAuth();
+  const user = await requireAuth();
   const comp = await getActiveCompetition();
   if (!comp) return (
     <div className="bg-white rounded-3xl p-10 text-center shadow-cs-sm">
@@ -18,6 +29,7 @@ export default async function FangPage() {
     </div>
   );
   const { data: settings } = await supabaseAdmin.from("competition_settings").select("topwater_bonus").eq("competition_id", comp.id).maybeSingle();
+  const twAlreadyGiven = await userAlreadyHasTwBonus(comp.id, user.id);
 
   return (
     <div>
@@ -27,7 +39,7 @@ export default async function FangPage() {
         <p className="text-[14px] text-ink-2 mt-1 max-w-[56ch]">So wenige Eingaben wie möglich. Punkte, Bonus und Slot-Zuordnung rechnet das System.</p>
       </section>
       <div className="max-w-[540px]">
-        <FangForm competitionId={comp.id} topwaterBonus={settings?.topwater_bonus ?? 10} />
+        <FangForm competitionId={comp.id} topwaterBonus={settings?.topwater_bonus ?? 10} twAlreadyGiven={twAlreadyGiven} />
       </div>
     </div>
   );

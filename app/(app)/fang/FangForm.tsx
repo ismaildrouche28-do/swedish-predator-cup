@@ -10,7 +10,7 @@ const SPECIES = [
   { key: "pike",   label: "Hecht",  min: 60, factor: 1.0 },
 ] as const;
 
-export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId: string; topwaterBonus?: number }) {
+export function FangForm({ competitionId, topwaterBonus = 10, twAlreadyGiven = false }: { competitionId: string; topwaterBonus?: number; twAlreadyGiven?: boolean }) {
   const [species, setSpecies] = useState<"perch" | "zander" | "pike">("zander");
   const [length, setLength] = useState("");
   const [topwater, setTopwater] = useState(false);
@@ -23,7 +23,9 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
   const l = parseInt(length) || 0;
   const valid = l >= rule.min;
   const base = valid ? Math.round(l * rule.factor) : 0;
-  const bonus = valid && topwater ? topwaterBonus : 0;
+  // Topwater-Bonus wird pro Teilnehmer nur EINMAL pro Wettkampf vergeben.
+  // Wenn der User schon einen valid TW-Fang mit Bonus hat, wird 0 gerechnet.
+  const bonus = valid && topwater && !twAlreadyGiven ? topwaterBonus : 0;
   const total = base + bonus;
 
   return (
@@ -65,7 +67,11 @@ export function FangForm({ competitionId, topwaterBonus = 10 }: { competitionId:
           className="w-full flex items-center justify-between bg-spc-greyLight rounded-2xl px-5 py-4 mb-4 text-left">
           <div>
             <div className="text-[15px] font-bold text-spc-dark">Topwater</div>
-            <div className="text-[12px] text-ink-3">Fang an der Oberfläche · +{topwaterBonus} Bonus</div>
+            <div className="text-[12px] text-ink-3">
+              {twAlreadyGiven
+                ? "Fang an der Oberfläche · Bonus bereits vergeben (+0)"
+                : `Fang an der Oberfläche · +${topwaterBonus} Bonus (einmalig)`}
+            </div>
           </div>
           <span className={`w-[51px] h-[31px] rounded-full relative transition ${topwater ? "bg-success" : "bg-ink-4"}`}>
             <span className={`absolute top-[2px] left-[2px] w-[27px] h-[27px] bg-white rounded-full shadow-sm transition-transform ${topwater ? "translate-x-[20px]" : ""}`}/>
