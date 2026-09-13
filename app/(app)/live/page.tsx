@@ -1,5 +1,5 @@
 import { requireAuth } from "@/lib/auth";
-import { getActiveCompetition, getLatestCompetition, getLiveRanking, getCurrentCall, getUpcomingCalls, getCompetitionFull } from "@/lib/queries";
+import { getActiveCompetition, getLatestCompetition, getLiveRanking, getCompetitionFull } from "@/lib/queries";
 import { supabaseAdmin } from "@/lib/supabase";
 import { assignScoredSlots, DEFAULT_SETTINGS } from "@/lib/scoring";
 import { LiveClock } from "./LiveClient";
@@ -14,10 +14,8 @@ export default async function LivePage() {
   const comp = await getActiveCompetition() ?? await getLatestCompetition();
   if (!comp) return <NoComp />;
 
-  const [ranking, currentCalls, upcomingAll, compFull, { data: allCatches }, { data: penaltyRows }] = await Promise.all([
+  const [ranking, compFull, { data: allCatches }, { data: penaltyRows }] = await Promise.all([
     getLiveRanking(comp.id),
-    getCurrentCall(comp.id),
-    getUpcomingCalls(comp.id, 20),
     getCompetitionFull(comp.id),
     supabaseAdmin.from("catches").select("*").eq("competition_id", comp.id).order("caught_at", { ascending: false }),
     supabaseAdmin.from("penalties").select("user_id, penalty_type").eq("competition_id", comp.id),
@@ -41,21 +39,47 @@ export default async function LivePage() {
   const leader = ranking[0];
   const usersById = new Map(compFull.users.map(u => [u.id, u]));
 
-  // Calls pro Boot: aktueller + nächster
-  type CallInfo = { boat_label: string; currentUser?: string; nextUser?: string; nextTime?: string };
-  const byBoat = new Map<string, CallInfo>();
-  for (const b of compFull.boats) byBoat.set(b.id, { boat_label: b.label });
-  for (const c of currentCalls as any[]) {
-    const info = byBoat.get(c.boat_id);
-    if (info) info.currentUser = c.users?.nickname ?? c.users?.name ?? "—";
-  }
-  for (const c of upcomingAll as any[]) {
-    const info = byBoat.get(c.boat_id);
-    if (info && !info.nextUser) {
-      info.nextUser = c.users?.nickname ?? c.users?.name ?? "—";
-      info.nextTime = new Date(c.start_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
-    }
-  }
+  // CALLS pro Boot — Ableitung aus compFull.calls (Single Source of Truth aus Setup).
+  // Fuer jedes Boot mit konfigurierten Calls berechnen wir:
+  //   currentCall = call wo start_at <= now <= end_at
+  //   nextCall    = erster call mit start_at > now
+  // Zeit-Referenz: falls bereits gestartet, real actual_start_at + acc pause,
+  //                sonst planned start (fuer prep-Vorschau).
+  const nameFor = (uid: string) => {
+    const u = usersById.get(uid);
+    return u?.nickname ?? u?.name ?? "—";
+  };
+  const fmtT = (v: string | Date) => new Date(v).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" });
+  const nowMs = Date.now();
+
+  type BoatCallInfo = {
+    boat_id: string;
+    boat_label: string;
+    hasCalls: boolean;
+    currentUser?: string;
+    currentUntil?: string;
+    nextUser?: string;
+    nextStart?: string;
+  };
+  const boatCalls: BoatCallInfo[] = compFull.boats.map(b => {
+    const rows = compFull.calls
+      .filter((c: any) => c.boat_id === b.id)
+      .sort((a: any, b: any) => +new Date(a.start_at) - +new Date(b.start_at));
+    if (rows.length === 0) return { boat_id: b.id, boat_label: b.label, hasCalls: false };
+
+    const curr = rows.find((c: any) => +new Date(c.start_at) <= nowMs && +new Date(c.end_at) >= nowMs);
+    const next = rows.find((c: any) => +new Date(c.start_at) > nowMs);
+    return {
+      boat_id: b.id,
+      boat_label: b.label,
+      hasCalls: true,
+      currentUser: curr ? nameFor(curr.user_id) : undefined,
+      currentUntil: curr ? fmtT(curr.end_at) : undefined,
+      nextUser:  next ? nameFor(next.user_id) : undefined,
+      nextStart: next ? fmtT(next.start_at) : undefined,
+    };
+  });
+  const activeBoats = boatCalls.filter(b => b.hasCalls);
 
   // Trend-Berechnung: Placeholder (echter Trend braucht historische Snapshots — später)
   return (
@@ -95,27 +119,32 @@ export default async function LivePage() {
         )}
       </section>
 
-      {/* CALL-Header: aktuelle + kommende Calls pro Boot */}
-      {compFull.boats.length > 0 && (
-        <section className="grid sm:grid-cols-2 gap-2.5 mb-3">
-          {compFull.boats.map(b => {
-            const info = byBoat.get(b.id)!;
-            return (
-              <div key={b.id} className="bg-white rounded-2xl p-4 shadow-cs-sm">
-                <div className="text-[10.5px] uppercase tracking-widest text-spc-mid font-bold mb-1.5">{b.label}</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-0.5">Jetzt</div>
-                    <div className="text-[15px] font-bold text-spc-dark truncate">{info?.currentUser ?? "—"}</div>
+      {/* CALL-Header: JETZT / NEXT pro Boot, nur Boote mit konfigurierten Calls */}
+      {activeBoats.length > 0 && (
+        <section className={`grid gap-2.5 mb-3 ${activeBoats.length > 1 ? "sm:grid-cols-2" : ""}`}>
+          {activeBoats.map(info => (
+            <div key={info.boat_id} className="bg-white rounded-2xl p-4 shadow-cs-sm">
+              <div className="text-[10.5px] uppercase tracking-widest text-spc-mid font-bold mb-2">{info.boat_label}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-0.5">
+                    Call jetzt{info.currentUntil ? ` · bis ${info.currentUntil}` : ""}
                   </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-0.5">Next {info?.nextTime && `· ${info.nextTime}`}</div>
-                    <div className="text-[14px] font-semibold text-ink-2 truncate">{info?.nextUser ?? "—"}</div>
+                  <div className="text-[15px] font-bold text-spc-dark truncate">
+                    {info.currentUser ?? <span className="text-ink-3 font-medium">kein Call</span>}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-widest text-ink-3 font-bold mb-0.5">
+                    Call next{info.nextStart ? ` · ab ${info.nextStart}` : ""}
+                  </div>
+                  <div className="text-[14px] font-semibold text-ink-2 truncate">
+                    {info.nextUser ?? <span className="text-ink-3 font-medium">—</span>}
                   </div>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </section>
       )}
 
