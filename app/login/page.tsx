@@ -6,11 +6,9 @@ export const dynamic = "force-dynamic";
 export default function LoginLanding() {
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white">
-      {/* Hintergrund */}
+      {/* Hintergrund — Bild pur, ohne Overlay */}
       <div className="absolute inset-0 z-0">
         <img src="/login-bg.jpg" alt="" className="w-full h-full object-cover" />
-        {/* Dark-Gradient von oben (Logo lesbar) und unten (Buttons lesbar) */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/75" />
       </div>
 
       {/* Content */}

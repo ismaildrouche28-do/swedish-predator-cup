@@ -9,7 +9,6 @@ export default function PinPage() {
     <main className="relative min-h-screen w-full overflow-hidden text-white">
       <div className="absolute inset-0 z-0">
         <img src="/login-bg.jpg" alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/85" />
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col px-6 pt-10 pb-10 safe-pt safe-pb">
